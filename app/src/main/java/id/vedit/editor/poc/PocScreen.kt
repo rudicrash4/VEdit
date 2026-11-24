@@ -11,6 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +20,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +30,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import android.view.SurfaceView
+import androidx.annotation.OptIn
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.util.ExperimentalApi
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.transformer.CompositionPlayer
+import kotlinx.coroutines.delay
 
 private class Picked(val uri: Uri, val durationMs: Long)
 
@@ -52,6 +64,13 @@ fun PocScreen() {
     var results by remember { mutableStateOf<List<ExperimentResult>>(emptyList()) }
     var runner by remember { mutableStateOf<PocRunner?>(null) }
     var running by remember { mutableStateOf(false) }
+    var previewId by remember { mutableStateOf<String?>(null) }
+    val experiments = remember(v1, v2, audio) {
+        v1?.takeIf { it.durationMs > 0 }?.let { a ->
+            val b = v2 ?: a
+            Experiments.build(context, PocInputs(a.uri, a.durationMs, b.uri, b.durationMs, audio?.uri, audio?.durationMs ?: 0L))
+        }
+    }
 
     val pick1 = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { u ->
         if (u != null) v1 = Picked(u, durationOf(context, u))
@@ -100,7 +119,64 @@ fun PocScreen() {
                 },
             ) { Text("Salin laporan") }
         }
+        if (experiments != null) {
+            Text("Preview manual (CompositionPlayer + Surface)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+            Text("Putar komposisi yang sama dengan yang diekspor, lalu bandingkan dengan hasil export. Nilai sendiri: dua lapisan, sinkron, tidak ada lompatan.", style = MaterialTheme.typography.bodySmall)
+            Row(Modifier.padding(top = 4.dp)) {
+                listOf("seq" to "A", "pip" to "PiP", "ramp" to "Ramp", "audio_mix" to "Mix").forEach { (id, label) ->
+                    if (experiments.any { it.id == id }) {
+                        Button(onClick = { previewId = id }, modifier = Modifier.padding(end = 8.dp)) { Text(label) }
+                    }
+                }
+            }
+            val sel = experiments.firstOrNull { it.id == previewId }
+            if (sel != null) PreviewPanel(sel) { previewId = null }
+        }
         results.forEach { ResultCard(it) }
+    }
+}
+
+@OptIn(UnstableApi::class, ExperimentalApi::class)
+@Composable
+private fun PreviewPanel(experiment: Experiment, onClose: () -> Unit) {
+    val context = LocalContext.current
+    var info by remember(experiment.id) { mutableStateOf("menyiapkan...") }
+    val player = remember(experiment.id) { CompositionPlayer.Builder(context).build() }
+    DisposableEffect(player) { onDispose { player.release() } }
+    DisposableEffect(player) {
+        val l = object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                info = "Error ${error.errorCodeName}: ${error.message}"
+            }
+        }
+        player.addListener(l)
+        onDispose { player.removeListener(l) }
+    }
+    LaunchedEffect(player) {
+        try {
+            player.setComposition(experiment.build())
+            player.prepare()
+            player.play()
+            while (true) {
+                info = "state=${player.playbackState} posisi=${player.currentPosition} ms / durasi=${player.duration} ms"
+                delay(250)
+            }
+        } catch (t: Throwable) {
+            info = "Gagal: ${Analysis.describeThrowable(t)}"
+        }
+    }
+    Column(Modifier.padding(top = 8.dp)) {
+        Text(experiment.title, style = MaterialTheme.typography.titleSmall)
+        AndroidView(
+            factory = { ctx -> SurfaceView(ctx).also { player.setVideoSurfaceView(it) } },
+            modifier = Modifier.fillMaxWidth().height(220.dp),
+        )
+        Text(info, style = MaterialTheme.typography.bodySmall)
+        Row {
+            Button(onClick = { player.seekTo(0); player.play() }) { Text("Ulangi") }
+            Button(onClick = { if (player.isPlaying) player.pause() else player.play() }, modifier = Modifier.padding(start = 8.dp)) { Text("Jeda/Putar") }
+            Button(onClick = onClose, modifier = Modifier.padding(start = 8.dp)) { Text("Tutup") }
+        }
     }
 }
 

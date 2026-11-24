@@ -65,4 +65,40 @@ class SpeedCurveTest {
         val d = outputDurationUs(curve.toSegments(10 * second, 250_000))
         assertTrue(d > 10 * second / 4 && d < 10 * second * 2)
     }
+
+    @Test
+    fun providerBoundariesAreHalfOpenAndConsistentWithDuration() {
+        val curve = SpeedCurve(listOf(SpeedPoint(0, 1f), SpeedPoint(5 * second, 4f), SpeedPoint(10 * second, 0.5f)))
+        val segs = curve.toSegments(10 * second, 250_000)
+        val p = SteppedSpeedProvider(segs)
+        // Tepat di batas segmen: kecepatan segmen BARU berlaku, dan batas berikutnya adalah akhir segmen itu
+        for (i in 1 until segs.size) {
+            assertEquals(segs[i].speed, p.getSpeed(segs[i].startUs), 0f)
+            assertEquals(segs[i - 1].speed, p.getSpeed(segs[i].startUs - 1), 0f)
+        }
+        // Integrasi lewat provider (loncat antar batas) harus sama dengan outputDurationUs
+        var t = 0L
+        var out = 0.0
+        while (t < 10 * second) {
+            val next = p.getNextSpeedChangeTimeUs(t).let { if (it == C.TIME_UNSET) 10 * second else it }
+            out += (next - t) / p.getSpeed(t).toDouble()
+            t = next
+        }
+        assertEquals(outputDurationUs(segs).toDouble(), out, 5.0)
+    }
+
+    @Test
+    fun slowRampEndsSlowerThanItStarts() {
+        val curve = SpeedCurve(listOf(SpeedPoint(0, 4f), SpeedPoint(5 * second, 0.5f)))
+        val segs = curve.toSegments(5 * second, 500_000)
+        assertTrue(segs.first().speed > segs.last().speed)
+        assertTrue(segs.zipWithNext().all { (a, b) -> b.speed <= a.speed })
+    }
+
+    @Test
+    fun timelineDurationOfSequenceIsSumOfPresentationDurations() {
+        // Dua klip: 5 dtk @1x dan 5 dtk @2x -> 5 + 2.5 dtk di timeline
+        val total = outputDurationUs(constantSegments(5 * second, 1f)) + outputDurationUs(constantSegments(5 * second, 2f))
+        assertEquals(7_500_000L, total)
+    }
 }
