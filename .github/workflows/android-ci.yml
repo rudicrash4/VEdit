@@ -31,6 +31,21 @@ jobs:
       - name: Make wrapper executable
         run: chmod +x ./gradlew
 
+      # Keystore didekode dari Secret ke file sementara di runner. Isinya tidak dicetak;
+      # GitHub juga menyamarkan nilai secret di log. Tanpa secret (mis. PR dari fork), build
+      # memakai debug key bawaan dan hal itu diberi peringatan di langkah verifikasi.
+      - name: Prepare signing key
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            printf '%s' "$KS_B64" | base64 -d > "$RUNNER_TEMP/vedit-release.jks"
+            echo "VEDIT_KEYSTORE_PATH=$RUNNER_TEMP/vedit-release.jks" >> "$GITHUB_ENV"
+            echo "Signing key tersedia (permanen)."
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 tidak tersedia. APK memakai debug key sementara dan tidak bisa menjadi update dari APK bertanda tangan permanen."
+          fi
+
       - name: Unit tests
         run: ./gradlew testDebugUnitTest --stacktrace
 
@@ -38,13 +53,36 @@ jobs:
         run: ./gradlew lintDebug --stacktrace
 
       - name: Assemble debug APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew assembleDebug --stacktrace
+
+      - name: Verify signature and write summary
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -n1)
+          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n1)/apksigner"
+          FP=$("$APKSIGNER" verify --print-certs "$APK" | grep -m1 "certificate SHA-256 digest" | sed 's/.*: //')
+          if [ -n "$VEDIT_KEYSTORE_PATH" ]; then MODE="permanen (secrets)"; else MODE="debug key sementara (TIDAK kompatibel untuk update)"; fi
+          {
+            echo "### VEdit APK"
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo "- Run number (versionCode): ${GITHUB_RUN_NUMBER}"
+            echo "- Signing: ${MODE}"
+            echo "- Sidik jari sertifikat SHA-256 (publik): \`${FP}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Sidik jari sertifikat: $FP"
+
+      - name: Remove keystore from runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/vedit-release.jks"
 
       - name: Upload debug APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: vedit-debug-apk
+          name: VEdit-debug-${{ github.run_number }}-${{ github.sha }}
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
