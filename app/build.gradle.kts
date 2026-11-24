@@ -14,8 +14,7 @@ android {
         targetSdk = 36
         // versionCode naik otomatis di CI (nomor run) agar APK baru selalu bisa menimpa yang lama.
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
-        val sha = System.getenv("GITHUB_SHA")?.take(7)
-        versionName = "0.0.3-phase0b" + (if (sha != null) "+$sha" else "")
+        versionName = providers.gradleProperty("vedit.versionName").get()
     }
 
     // Signing permanen: hanya aktif jika keystore tersedia lewat environment (CI mengisinya dari GitHub Secrets).
