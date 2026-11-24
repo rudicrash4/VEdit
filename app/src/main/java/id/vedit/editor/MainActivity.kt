@@ -51,6 +51,6 @@ private fun Section(title: String, items: List<CodecSummary>) {
     Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
     if (items.isEmpty()) Text("Tidak ditemukan")
     items.forEach {
-        Text("${it.name} | ${if (it.isHardware) "hardware" else "software"} | maks instance: ${it.maxInstances ?: "?"}")
+        Text("${it.name} | ${when (it.isHardware) { true -> "hardware"; false -> "software"; null -> "tidak diketahui" }} | maks instance: ${it.maxInstances ?: "?"}")
     }
 }
