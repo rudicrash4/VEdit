@@ -9,8 +9,8 @@ import androidx.media3.common.audio.ChannelMixingAudioProcessor
 import androidx.media3.common.audio.ChannelMixingMatrix
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.effect.OverlaySettings
-import androidx.media3.effect.VideoCompositorSettings
+import androidx.media3.common.OverlaySettings
+import androidx.media3.common.VideoCompositorSettings
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
