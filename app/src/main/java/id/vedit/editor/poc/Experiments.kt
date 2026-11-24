@@ -10,6 +10,7 @@ import androidx.media3.common.audio.ChannelMixingMatrix
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.OverlaySettings
+import androidx.media3.effect.StaticOverlaySettings
 import androidx.media3.common.VideoCompositorSettings
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
@@ -82,9 +83,9 @@ object Experiments {
 
         override fun getOverlaySettings(inputId: Int, presentationTimeUs: Long): OverlaySettings =
             if (inputId == 0) {
-                OverlaySettings.Builder().build()
+                StaticOverlaySettings.Builder().build()
             } else {
-                OverlaySettings.Builder()
+                StaticOverlaySettings.Builder()
                     .setScale(0.3f, 0.3f)
                     .setBackgroundFrameAnchor(0.9f, -0.9f)
                     .setOverlayFrameAnchor(1f, -1f)
