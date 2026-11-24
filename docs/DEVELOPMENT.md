@@ -216,5 +216,7 @@ Do not claim universal device compatibility.
 
 ## 9. Progress notes
 - Phase 0: selesai (CI hijau, uji perangkat CPH2591 API 35: aplikasi terbuka, codec terdeteksi).
-- Phase 0B: PoC dibangun dan lolos CI; menunggu hasil perangkat sebelum Phase 1 (lihat `PHASE0B_REPORT.md`).
+- Phase 0B: PoC diuji di CPH2591 (7/8 lolos; preview gagal karena durationUs, sudah diperbaiki di build v0.1.0, belum diuji ulang). Phase 1 belum dimulai (lihat `PHASE0B_REPORT.md`).
+- Distribusi APK: GitHub Release (APK langsung) per push ke main; artifact Actions tetap ZIP. Nama `VEdit-<Tahap>-v<versi>.apk` dari `gradle.properties`.
+- Ikon sementara adaptive sudah ada (`res/mipmap-*`, `drawable/ic_launcher_foreground.xml`).
 - Signing permanen ditunda; debug key sementara dipakai (`SIGNING.md`).

@@ -366,3 +366,5 @@ A feature is done only when:
 - Multi-track = beberapa `EditedMediaItemSequence` dalam `Composition`; audio yang tumpang tindih dicampur; layout video via `VideoCompositorSettings` (`androidx.media3.common`).
 - `CompositionPlayer` masih `@ExperimentalApi`; paritas preview/export wajib diverifikasi per fitur.
 - Detail: `docs/PHASE0B_REPORT.md`.
+- Update setelah uji CPH2591: `CompositionPlayer` mewajibkan `EditedMediaItem.setDurationUs(durasi sumber tanpa clipping)`; tanpa itu `checkState` tanpa pesan melempar `IllegalStateException`. Aturan arsitektur: SATU builder `Composition` dipakai preview dan export, dan setiap `EditedMediaItem` selalu membawa durationUs.
+- Verifikasi export wajib terukur, bukan hanya durasi: RMS audio (volume/mixing), pixel diff (PiP), timestamp frame (ramp). Logika verifikasi murni ada di `poc/Analysis.kt` dan diuji unit.
