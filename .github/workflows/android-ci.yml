@@ -86,6 +86,10 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      - name: Print lint report (on failure)
+        if: failure()
+        run: cat app/build/reports/lint-results-debug.txt 2>/dev/null | grep -E "Error:|Warning:" | head -60 || true
+
       - name: Upload reports (on failure)
         if: failure()
         uses: actions/upload-artifact@v4

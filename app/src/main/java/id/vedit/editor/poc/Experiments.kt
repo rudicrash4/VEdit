@@ -30,6 +30,7 @@ data class PocInputs(
 
 enum class Kind { EXPORT, PREVIEW_DURATION }
 
+@OptIn(UnstableApi::class)
 class Experiment(
     val id: String,
     val title: String,
