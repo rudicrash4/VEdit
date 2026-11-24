@@ -5,6 +5,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Button
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import id.vedit.editor.poc.PocScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -21,7 +28,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                Surface { Phase0Screen() }
+                Surface {
+                    var tab by remember { mutableIntStateOf(1) }
+                    Column {
+                        Row(Modifier.padding(8.dp)) {
+                            Button(onClick = { tab = 0 }) { Text("Diagnostik") }
+                            Button(onClick = { tab = 1 }, modifier = Modifier.padding(start = 8.dp)) { Text("PoC 0B") }
+                        }
+                        if (tab == 0) Phase0Screen() else PocScreen()
+                    }
+                }
             }
         }
     }
@@ -38,7 +54,7 @@ private fun Phase0Screen() {
     val h264Dec = CodecInfo.list(MimeTypes.VIDEO_H264, encoder = false)
     Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text("VEdit ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.headlineSmall)
-        Text("Phase 0: diagnostik perangkat. Editor belum tersedia.")
+        Text("Diagnostik perangkat. Editor belum tersedia.")
         Text("Android API ${Build.VERSION.SDK_INT} (${Build.MODEL})")
         Section("Encoder H.264", h264Enc)
         Section("Encoder AAC", aacEnc)
