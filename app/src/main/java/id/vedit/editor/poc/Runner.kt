@@ -10,6 +10,7 @@ import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
+import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.CompositionPlayer
@@ -185,6 +186,7 @@ class PocRunner(
         }
     }
 
+    @OptIn(UnstableApi::class, ExperimentalApi::class)
     private fun runPreview(i: Int, e: Experiment, next: () -> Unit) {
         val player = CompositionPlayer.Builder(ctx).build()
         var finished = false
