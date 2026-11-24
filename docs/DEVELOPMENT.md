@@ -213,3 +213,8 @@ GitHub Actions cannot prove every Android device behavior. After an APK is gener
 - Memory and thermal behavior on longer media.
 
 Do not claim universal device compatibility.
+
+## 9. Progress notes
+- Phase 0: selesai (CI hijau, uji perangkat CPH2591 API 35: aplikasi terbuka, codec terdeteksi).
+- Phase 0B: PoC dibangun dan lolos CI; menunggu hasil perangkat sebelum Phase 1 (lihat `PHASE0B_REPORT.md`).
+- Signing permanen ditunda; debug key sementara dipakai (`SIGNING.md`).

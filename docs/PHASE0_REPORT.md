@@ -36,6 +36,6 @@ README repo menyebut: editor "web, desktop, and mobile", rewrite dengan inti Rus
 Tidak ditambahkan. Dievaluasi hanya jika PoC menunjukkan Media3 tidak cukup (lihat TDD bagian 3).
 
 ## Risiko
-- Versi AGP/Kotlin/Compose dipilih dari pengetahuan saya dan belum bisa dibangun lokal (sandbox tanpa jaringan); build pertama terjadi di GitHub Actions.
-- Kompatibilitas compileSdk 36 dengan Media3 1.11.1 belum dikonfirmasi sampai CI berjalan.
+- Build hanya bisa diverifikasi di GitHub Actions (sandbox pengembang tanpa jaringan). Phase 0 diuji di CPH2591 (API 35): layar diagnostik terbuka tanpa crash, H.264 HW encoder (MediaTek) dan AAC software encoder terdeteksi.
+- (Terselesaikan) compileSdk 36 + Media3 1.11.1 + AGP 8.13.0 berhasil di CI.
 - Speed ramp dan multi-track belum terbukti.

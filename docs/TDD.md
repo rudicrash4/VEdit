@@ -360,3 +360,9 @@ A feature is done only when:
 8. Documentation is updated.
 9. Changes are committed and pushed to the intended repository.
 10. The workflow result is checked and accurately reported.
+
+## 19. Addendum Phase 0B (temuan API, belum final)
+- `SpeedProvider` Media3 bersifat piecewise-constant dan berbasis waktu sumber; kurva VEdit harus didiskretisasi (`SpeedCurve.toSegments`). Mulus/tidaknya hasil export belum terbukti di perangkat.
+- Multi-track = beberapa `EditedMediaItemSequence` dalam `Composition`; audio yang tumpang tindih dicampur; layout video via `VideoCompositorSettings` (`androidx.media3.common`).
+- `CompositionPlayer` masih `@ExperimentalApi`; paritas preview/export wajib diverifikasi per fitur.
+- Detail: `docs/PHASE0B_REPORT.md`.
