@@ -217,7 +217,7 @@ Do not claim universal device compatibility.
 ## 9. Progress notes
 - Phase 0: selesai (CI hijau, uji perangkat CPH2591 API 35: aplikasi terbuka, codec terdeteksi).
 - Phase 0B: PoC diuji di CPH2591 (7/8 lolos; preview gagal karena durationUs, sudah diperbaiki di build v0.1.0, belum diuji ulang). Phase 1 belum dimulai (lihat `PHASE0B_REPORT.md`).
-- Distribusi APK: GitHub Release (APK langsung) per push ke main; artifact Actions tetap ZIP. Nama `VEdit-<Tahap>-v<versi>.apk` dari `gradle.properties`.
+- Distribusi APK: GitHub Release (aset `.apk` langsung, bukan ZIP) hanya setelah workflow sukses pada push ke `main`; artifact Actions saat ini juga satu file APK dengan `archive: false`. Nama `VEdit-<Tahap>-v<versi>.apk` dari `gradle.properties`.
 - Ikon sementara adaptive sudah ada (`res/mipmap-*`, `drawable/ic_launcher_foreground.xml`).
 - Signing permanen ditunda; debug key sementara dipakai (`SIGNING.md`).
 - Phase 1 (1.1-1.2): mesin timeline, penyimpanan proyek berautosave, impor SAF, shell editor. Lolos CI; belum diuji perangkat; belum ada preview (lihat `PHASE1_REPORT.md`). Versi aplikasi 0.2.0, APK `VEdit-Phase1-v0.2.0.apk`.
@@ -238,11 +238,25 @@ Tiap tahap selesai hanya bila kriteria terpenuhi, lolos CI, dan (untuk perilaku 
 - v0.5.0: rasio kanvas + optimasi preview (lihat PHASE1_REPORT). Lolos CI; belum diuji perangkat. Hasil uji v0.4.0 di OPPO A18: semua lancar, preview agak lag.
 
 
-## UI refresh — PR #1 (25 Nov 2026)
-- Scope dibatasi pada presentasi Compose: beranda, theme gelap, panel preview/editor.
-- Ketentuan GDD yang dijaga: portrait-first, touch target jelas, kontrol yang belum tersedia tidak ditambahkan, dan tidak mengubah perilaku domain.
-- CI pertama gagal pada compile Kotlin karena import `androidx.compose.foundation.background` terlewat di `EditorScreen.kt`; perbaikan import dibuat sebelum mengulang CI.
-- Status belum selesai sampai unit test, lint, assembleDebug, dan uji perangkat tervalidasi.
+## UI/UX refresh — PR #2, target v0.5.1 (25 Nov 2026)
+
+### Perubahan UI yang benar-benar dilakukan
+- `HomeScreen.kt`: beranda proyek memakai pendekatan dark studio, dengan kartu/daftar proyek dan aksi membuat proyek baru yang lebih jelas.
+- `MainActivity.kt`: skema tema gelap dan warna permukaan aplikasi diselaraskan.
+- `PreviewPanel.kt`: hierarki preview stage dan kontrol playback diperjelas; tetap memakai `PreviewController` dan `SurfaceView` yang ada.
+- `EditorScreen.kt`: panel preview/kanvas, timeline, tools, dan media ditata ulang; dukungan layout adaptif portrait/landscape dipertahankan.
+- Import `androidx.compose.foundation.background` ditambahkan untuk memperbaiki kegagalan kompilasi.
+
+### Batas perubahan
+Perubahan UI berada pada lapisan presentasi Compose. Tidak ada perubahan yang disengaja pada model/schema proyek, timeline engine, undo/redo, autosave, impor media, preview engine/controller, atau export pipeline/controller. Thumbnail timeline dan waveform **belum** dibuat; tidak ada fitur baru yang boleh dianggap tersedia hanya karena perubahan tampilan.
+
+### Validasi dan status perangkat
+- CI PR #33 untuk commit sebelum version bump: unit tests, lint, `assembleDebug`, dan verifikasi APK lulus.
+- CI untuk commit v0.5.1 wajib diperiksa lagi setelah push.
+- Build CI bukan bukti uji perangkat. UI versi v0.5.1 masih perlu diuji pada HP nyata.
+
+### Aturan catatan rilis
+Setiap GitHub Release harus menyebut versi, perubahan UI secara spesifik (atau menyatakan tidak ada perubahan UI), perubahan non-UI, validasi otomatis, dan status uji perangkat. Release harus menyediakan file `.apk` langsung sebagai aset, bukan mengandalkan ZIP artifact Actions.
 
 
 ## Unduh APK langsung dari GitHub Actions
