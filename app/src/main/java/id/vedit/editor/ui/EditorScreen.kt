@@ -19,6 +19,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -327,31 +331,39 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
         }
     }
 
-    // Tata letak adaptif: ponsel potret = satu kolom; layar lebar/landscape/tablet = dua panel (preview+timeline | alat+media).
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+    // Layout editor: dark studio, preview sebagai fokus utama, timeline dan tool dalam panel terpisah.
+    BoxWithConstraints(Modifier.fillMaxSize().background(Color(0xFF090B10))) {
         val boxH = this.maxHeight
-        val wide = this.maxWidth >= 640.dp && this.maxWidth > boxH
+        val wide = this.maxWidth >= 700.dp && this.maxWidth > boxH
+        @Composable
+        fun Panel(content: @Composable () -> Unit) {
+            Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF151A23)),
+                modifier = Modifier.fillMaxWidth(),
+            ) { Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { content() } }
+        }
         if (wide) {
-            Row(Modifier.fillMaxSize().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1.3f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxSize().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1.35f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Header()
-                    PreviewBlock((boxH * 0.55f).coerceAtLeast(120.dp))
-                    CanvasBlock()
-                    TimelineBlock()
+                    Panel { PreviewBlock((boxH * 0.48f).coerceAtLeast(150.dp)) }
+                    Panel { CanvasBlock() }
+                    Panel { TimelineBlock() }
                 }
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ToolsBlock()
-                    MediaBlock()
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Panel { ToolsBlock() }
+                    Panel { MediaBlock() }
                 }
             }
         } else {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Header()
-                PreviewBlock((boxH * 0.4f).coerceAtLeast(120.dp))
-                CanvasBlock()
-                TimelineBlock()
-                ToolsBlock()
-                MediaBlock()
+                Panel { PreviewBlock((boxH * 0.34f).coerceAtLeast(130.dp)) }
+                Panel { CanvasBlock() }
+                Panel { TimelineBlock() }
+                Panel { ToolsBlock() }
+                Panel { MediaBlock() }
             }
         }
     }
