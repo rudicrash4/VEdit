@@ -3,8 +3,6 @@ package id.vedit.editor.data
 import id.vedit.editor.domain.Project
 import java.io.File
 import java.io.FileOutputStream
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 /**
  * Penyimpanan proyek berbasis file: <root>/<id>/project.json (+ .bak dari versi sebelumnya).
@@ -28,10 +26,11 @@ class ProjectStore(private val root: File, private val codec: ProjectCodec = Pro
             out.fd.sync()
         }
         if (main.exists()) main.copyTo(File(d, "project.json.bak"), overwrite = true)
-        try {
-            Files.move(tmp.toPath(), main.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-        } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
-            Files.move(tmp.toPath(), main.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        // rename(2) pada filesystem yang sama bersifat atomik dan menggantikan target di Android/Linux;
+        // java.nio.file baru ada di API 26 sehingga tidak dipakai (minSdk 24).
+        if (!tmp.renameTo(main)) {
+            main.delete()
+            check(tmp.renameTo(main)) { "gagal mengganti project.json" }
         }
     }
 
