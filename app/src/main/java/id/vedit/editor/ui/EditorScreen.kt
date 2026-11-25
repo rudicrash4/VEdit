@@ -306,12 +306,13 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
 
     // Tata letak adaptif: ponsel potret = satu kolom; layar lebar/landscape/tablet = dua panel (preview+timeline | alat+media).
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val wide = maxWidth >= 640.dp && maxWidth > maxHeight
+        val boxH = this.maxHeight
+        val wide = this.maxWidth >= 640.dp && this.maxWidth > boxH
         if (wide) {
             Row(Modifier.fillMaxSize().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1.3f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Header()
-                    PreviewBlock((maxHeight * 0.55f).coerceAtLeast(120.dp))
+                    PreviewBlock((boxH * 0.55f).coerceAtLeast(120.dp))
                     TimelineBlock()
                 }
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -322,7 +323,7 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
         } else {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Header()
-                PreviewBlock((maxHeight * 0.4f).coerceAtLeast(120.dp))
+                PreviewBlock((boxH * 0.4f).coerceAtLeast(120.dp))
                 TimelineBlock()
                 ToolsBlock()
                 MediaBlock()
