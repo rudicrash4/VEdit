@@ -392,7 +392,7 @@ Paket `preview` (Android) + `domain.PreviewPlan` (murni, teruji JVM).
 - Engine preview tetap `CompositionPlayer` (tidak diganti; belum ada bukti teknis perlu).
 
 
-## UI presentation update — PR #1
+## UI presentation update — PR #2 (target v0.5.1)
 - Implementasi tetap Jetpack Compose dalam modul `:app`; tidak menambah dependency atau mengubah arsitektur domain.
 - Warna dark studio diterapkan melalui `MaterialTheme`/`darkColorScheme`; komponen preview tetap memakai `PreviewController` dan `SurfaceView` yang sudah ada.
 - Panel hanya membungkus composable yang sudah ada. Semua callback editing, project persistence, playback, dan export dipertahankan.
