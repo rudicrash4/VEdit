@@ -102,8 +102,7 @@ jobs:
           STAGE: ${{ steps.apk.outputs.stage }}
         run: |
           TAG="build-${GITHUB_RUN_NUMBER}"
-          NOTES="$(cat <<EOF
-## VEdit ${STAGE} v${VERSION}
+          NOTES="## VEdit ${STAGE} v${VERSION}
 
 ### Perubahan UI
 - HomeScreen: beranda proyek dark studio; kartu/daftar proyek dan aksi proyek baru lebih jelas.
@@ -111,20 +110,18 @@ jobs:
 - PreviewPanel: preview stage dan kontrol playback dirapikan; pemutar lama dipertahankan.
 - EditorScreen: panel preview/kanvas, timeline, tools, dan media ditata ulang; layout adaptif dipertahankan.
 - Perbaikan compile: import androidx.compose.foundation.background ditambahkan.
-- Tidak ada perubahan pada model proyek, timeline engine, autosave, media import, preview engine/controller, atau export controller.
+- Model proyek, timeline engine, autosave, media import, preview engine/controller, dan export controller tidak diubah.
 
 ### Perubahan lainnya
 - Version name dinaikkan dari 0.5.0 ke 0.5.1.
-- Workflow dan dokumentasi diperbarui agar Release berisi APK langsung dan catatan perubahan yang jelas.
-- Thumbnail timeline dan waveform belum tersedia; tidak termasuk dalam perubahan ini.
+- Workflow dan dokumentasi diperbarui untuk menerbitkan APK langsung di Releases.
+- Thumbnail timeline dan waveform belum tersedia dan tidak termasuk dalam perubahan ini.
 
 ### Validasi
 - Commit: ${GITHUB_SHA::7}; build: ${GITHUB_RUN_NUMBER}.
-- Unit tests, lint, assembleDebug, dan verifikasi APK harus berhasil sebelum langkah Release dijalankan.
+- Unit tests, lint, assembleDebug, dan verifikasi APK wajib lulus sebelum Release.
 - Uji instalasi dan fungsi pada perangkat fisik untuk build ini belum dikonfirmasi.
-- APK debug untuk pengujian, bukan rilis produksi. Jika tidak ada signing secret, APK menggunakan debug key sementara.
-EOF
-)"
+- APK debug untuk pengujian, bukan rilis produksi. Jika signing secret tidak tersedia, APK memakai debug key sementara."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "dist/${NAME}" --clobber
           else
