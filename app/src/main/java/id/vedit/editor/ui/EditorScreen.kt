@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -46,12 +47,16 @@ import id.vedit.editor.domain.Project
 import id.vedit.editor.domain.TimelineEngine
 import id.vedit.editor.domain.US_PER_SECOND
 import id.vedit.editor.domain.formatTime
+import id.vedit.editor.domain.PreviewPlan
+import id.vedit.editor.preview.defaultPreviewController
+import kotlinx.coroutines.delay
 import java.util.UUID
 import java.util.concurrent.Executors
 
 /** Hook agar Activity bisa menyimpan segera saat aplikasi berhenti (autosave dengan debounce bisa tertunda). */
 object ActiveEditor {
     var flush: (() -> Unit)? = null
+    var pause: (() -> Unit)? = null
 }
 
 private val CROP_PRESETS = listOf<Pair<String, Float?>>("Tanpa crop" to null, "1:1" to 1f, "16:9" to 16f / 9f, "9:16" to 9f / 16f)
@@ -79,25 +84,53 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
     var cropIndex by remember(projectId) { mutableStateOf(0) }
 
     val autosaver = remember(projectId) { Autosaver(HandlerScheduler(), 800) { store.save(it) } }
+    val preview = remember(projectId) { defaultPreviewController(context) }
     val importer = remember { MediaImporter(context.applicationContext) }
     val io = remember { Executors.newSingleThreadExecutor() }
     val main = remember { Handler(Looper.getMainLooper()) }
 
     DisposableEffect(projectId) {
         ActiveEditor.flush = { autosaver.flushNow() }
+        ActiveEditor.pause = { preview.pause() }
         onDispose {
             autosaver.flushNow()
             ActiveEditor.flush = null
+            ActiveEditor.pause = null
+            preview.release()
             io.shutdown()
         }
     }
-    BackHandler { autosaver.flushNow(); onBack() }
 
-    fun publish(p: Project) {
-        val stamped = p.copy(modifiedAtMs = System.currentTimeMillis())
-        project = stamped
-        autosaver.onChanged(stamped)
+    fun seek(us: Long) {
+        val t = PreviewPlan.clampPlayhead(us, project.durationUs)
+        playheadUs = t
+        preview.seekTo(t)
     }
+
+    fun selectClip(id: String?) {
+        selectedId = id
+        // Memilih klip memindah playhead ke awal klip bila playhead belum di dalamnya, sehingga preview menampilkan klip itu.
+        val c = id?.let { project.clip(it) }
+        if (c != null && !PreviewPlan.playheadInside(c, playheadUs)) seek(c.startUs)
+    }
+
+    // Bangun ulang preview bila struktur proyek berubah (split/trim/urutan/impor/undo), dengan debounce.
+    LaunchedEffect(project.tracks, project.sources) {
+        delay(300)
+        preview.update(project, playheadUs)
+    }
+
+    // Playhead mengikuti pemutar saat memutar (dan sekali lagi saat berhenti agar posisi akhir tercatat).
+    LaunchedEffect(preview) {
+        var was = false
+        while (true) {
+            delay(100)
+            val playing = preview.ui.isPlaying
+            if (playing || was) playheadUs = PreviewPlan.clampPlayhead(preview.positionUs, history.current.durationUs)
+            was = playing
+        }
+    }
+    BackHandler { autosaver.flushNow(); onBack() }
 
     fun commit(edit: Edit) {
         when (edit) {
@@ -147,37 +180,28 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
             TextButton(enabled = history.canRedo, onClick = { history.redo()?.let { project = it; selectedId = null; autosaver.onChanged(it) } }) { Text("Redo") }
         }
 
-        // Preview belum ada (sub-tahap 1.3). Area ini menampilkan informasi nyata, bukan gambar palsu.
-        Box(
-            Modifier.fillMaxWidth().height(120.dp).border(1.dp, MaterialTheme.colorScheme.outline),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Preview video: belum tersedia (sub-tahap berikutnya)", style = MaterialTheme.typography.bodySmall)
-                Text("Playhead ${formatTime(playheadUs)} / ${formatTime(project.durationUs)}", style = MaterialTheme.typography.titleSmall)
-                if (selected != null) {
-                    val src = project.source(selected.sourceId)
-                    Text(
-                        "Terpilih: ${src?.displayName} | ${formatTime(selected.durationUs)} | rotasi ${selected.rotationDeg}" +
-                            (selected.crop?.let { " | crop" } ?: ""),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
+        PreviewPanel(preview, playheadUs, project.durationUs)
+        if (selected != null) {
+            val src = project.source(selected.sourceId)
+            Text(
+                "Terpilih: ${src?.displayName} | ${formatTime(selected.durationUs)} | rotasi ${selected.rotationDeg}" +
+                    (selected.crop?.let { " | crop" } ?: ""),
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
 
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            OutlinedButton(onClick = { playheadUs = 0 }) { Text("|<") }
-            OutlinedButton(onClick = { playheadUs = (playheadUs - US_PER_SECOND).coerceAtLeast(0) }) { Text("-1s") }
-            OutlinedButton(onClick = { playheadUs = (playheadUs + US_PER_SECOND).coerceAtMost(project.durationUs) }) { Text("+1s") }
-            OutlinedButton(onClick = { playheadUs = project.durationUs }) { Text(">|") }
+            OutlinedButton(onClick = { seek(0) }) { Text("|<") }
+            OutlinedButton(onClick = { seek(playheadUs - US_PER_SECOND) }) { Text("-1s") }
+            OutlinedButton(onClick = { seek(playheadUs + US_PER_SECOND) }) { Text("+1s") }
+            OutlinedButton(onClick = { seek(project.durationUs) }) { Text(">|") }
             OutlinedButton(onClick = { dpPerSecond = (dpPerSecond * 0.7f).coerceAtLeast(10f) }) { Text("Zoom -") }
             OutlinedButton(onClick = { dpPerSecond = (dpPerSecond * 1.4f).coerceAtMost(400f) }) { Text("Zoom +") }
         }
 
         Timeline(
             project = project, selectedClipId = selectedId, playheadUs = playheadUs, dpPerSecond = dpPerSecond,
-            onSelect = { selectedId = it }, onSeek = { playheadUs = it },
+            onSelect = { selectClip(it) }, onSeek = { seek(it) },
         )
 
         // Alat edit untuk klip terpilih

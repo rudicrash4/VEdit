@@ -47,6 +47,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        ActiveEditor.pause?.invoke()
         ActiveEditor.flush?.invoke()
         super.onStop()
     }
