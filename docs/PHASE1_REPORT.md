@@ -121,3 +121,32 @@ Pilihan 16:9, 9:16, 1:1, 4:5 + Fit/Fill; tersimpan di proyek (schema 2); preview
 - **Unit test (JVM, CI):** `CanvasTest` (dimensi semua preset, genap, rasio, preview < export, rencana export mengikuti kanvas dan menolak 1080p, default, round trip + undo/redo, migrasi v1, perubahan kanvas memicu rebuild), `PreviewControllerTest` (+ tanpa rebuild bila struktur sama, rebuild saat kanvas berubah, metrik waktu). Hasil CI dicatat di laporan akhir.
 - **Perangkat:** v0.5.0 belum diuji.
 - **Perlu diuji di OPPO A18:** apakah preview lebih lancar (laporkan "siap X ms"); ganti rasio 9:16/1:1/4:5 dan lihat kanvas preview; export tiap rasio (cek dimensi file, tidak melar); Fit vs Fill; video landscape di kanvas portrait dan sebaliknya; gambar persegi; crop + rotasi di semua rasio; tutup/buka ulang proyek (rasio tetap); proyek lama dari v0.4.0 tetap terbuka.
+
+
+---
+# v0.5.1 — UI/UX refresh (PR #2, 25 Nov 2026)
+
+## Ringkasan perubahan
+Versi aplikasi dinaikkan dari `0.5.0` ke `0.5.1`. Perubahan utama adalah penyegaran UI Compose, bukan penambahan fitur editing.
+
+| File | Perubahan |
+|---|---|
+| `HomeScreen.kt` | Beranda dark studio; kartu/daftar proyek dan aksi proyek baru diberi hierarki visual lebih jelas. |
+| `MainActivity.kt` | Tema gelap/palet warna aplikasi diselaraskan. |
+| `PreviewPanel.kt` | Preview stage dan kontrol playback ditata ulang; pemutar/controller lama dipertahankan. |
+| `EditorScreen.kt` | Panel preview/kanvas, timeline, tools, dan media disusun lebih jelas; layout adaptif dipertahankan. |
+| `EditorScreen.kt` | Import `androidx.compose.foundation.background` ditambahkan untuk memperbaiki compile error. |
+| `gradle.properties` | `vedit.versionName` dinaikkan ke `0.5.1`; `versionCode` tetap nomor run CI. |
+| `.github/workflows/android-ci.yml` | Catatan GitHub Release dibuat eksplisit: versi, perubahan UI, perubahan lain, validasi, dan status uji perangkat. APK tetap aset `.apk` langsung. |
+
+## Yang sengaja tidak diubah
+Model/schema proyek, timeline engine dan undo/redo, autosave, media import, preview engine/controller, export controller/pipeline. Thumbnail timeline, waveform, contextual inspector penuh, efek dan transisi belum termasuk dalam refresh ini.
+
+## Validasi
+- CI run #33 pada commit UI sebelumnya: unit tests, lint, `assembleDebug`, dan verifikasi APK **lulus**.
+- CI baru pada commit v0.5.1 harus lulus sebelum dianggap siap rilis.
+- Uji fisik v0.5.1: **belum dilakukan**. Perlu uji tampilan portrait/landscape, sentuhan timeline, playback/seek, simpan/buka proyek, dan export pada HP nyata.
+- Build CI dan verifikasi tanda tangan/metadata bukan bukti bahwa APK sudah diuji instalasi atau fungsi di perangkat.
+
+## Distribusi
+Setelah PR digabung ke `main`, workflow menjalankan build untuk push `main`; jika seluruh langkah sukses, GitHub Release `build-<nomor-run>` dibuat dengan aset `VEdit-Phase1-v0.5.1.apk`. PR build tidak menerbitkan Release. Signing masih mengikuti konfigurasi `SIGNING.md`; bila secret signing permanen tidak tersedia, APK memakai debug key sementara.

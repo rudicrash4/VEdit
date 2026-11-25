@@ -92,7 +92,7 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP/vedit-release.jks"
 
-      # APK langsung (bukan ZIP) hanya bisa lewat GitHub Release; artifact Actions SELALU dibungkus ZIP oleh GitHub.
+      # APK langsung juga dipublikasikan lewat GitHub Release pada push ke main.
       - name: Publish APK as GitHub Release asset
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -102,26 +102,27 @@ jobs:
           STAGE: ${{ steps.apk.outputs.stage }}
         run: |
           TAG="build-${GITHUB_RUN_NUMBER}"
-          NOTES="APK debug (debug key sementara) untuk pengujian. Commit ${GITHUB_SHA::7}, build ${GITHUB_RUN_NUMBER}. Bukan rilis produksi."
+          NOTES="VEdit ${STAGE} v${VERSION}. Perubahan UI: HomeScreen dark studio dengan daftar/kartu proyek dan aksi proyek baru lebih jelas; MainActivity tema gelap/palet diselaraskan; PreviewPanel preview stage dan kontrol playback dirapikan; EditorScreen panel preview/kanvas, timeline, tools, dan media ditata ulang dengan layout adaptif. Perbaikan compile: import androidx.compose.foundation.background. Tidak mengubah model/schema proyek, timeline engine, autosave, media import, preview engine/controller, atau export controller. Version name 0.5.0 ke 0.5.1. Thumbnail timeline dan waveform belum tersedia. Validasi CI harus lulus; uji fisik build ini belum dikonfirmasi. APK debug untuk pengujian, bukan rilis produksi; tanpa signing secret memakai debug key sementara. Commit ${GITHUB_SHA::7}, build ${GITHUB_RUN_NUMBER}."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "dist/${NAME}" --clobber
           else
             gh release create "$TAG" "dist/${NAME}" --target "$GITHUB_SHA" \
-              --title "VEdit ${STAGE} v${VERSION} (build ${GITHUB_RUN_NUMBER})" --notes "$NOTES" --latest
+              --title "VEdit ${STAGE} v${VERSION} — UI/UX refresh (build ${GITHUB_RUN_NUMBER})" --notes "$NOTES" --latest
           fi
           {
             echo "- Unduh APK langsung: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${NAME}"
             echo "- APK terbaru: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/${NAME}"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Tetap diunggah sebagai artifact (berbentuk ZIP, itu mekanisme GitHub) untuk riwayat dan cadangan.
-      - name: Upload APK artifact (ZIP oleh GitHub)
+      # Unggah satu APK tanpa pembungkus ZIP; nama artifact mengikuti nama file APK.
+      - name: Upload APK artifact (file APK langsung)
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.apk.outputs.stage }}-v${{ steps.apk.outputs.version }}-build${{ github.run_number }}-${{ github.sha }}
-          path: dist/*.apk
+          path: dist/${{ steps.apk.outputs.name }}
+          archive: false
           if-no-files-found: error
+          retention-days: 30
 
       - name: Print lint report (on failure)
         if: failure()

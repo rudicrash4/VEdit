@@ -39,3 +39,16 @@
 - Preview: tidak membangun ulang pemutar bila struktur tidak berubah; metrik waktu siap (`lastBuildMs`) dan jumlah build tampil di panel.
 - UI: pemilih rasio dan Fit/Fill di bawah preview; panel preview mengikuti rasio kanvas.
 - Test: `CanvasTest` (dimensi semua preset, migrasi v1, undo/redo, round trip), tambahan `PreviewControllerTest`.
+
+
+## Phase 1 v0.5.1 — UI/UX refresh
+- **Versi:** `vedit.versionName` dinaikkan dari `0.5.0` ke `0.5.1`; `versionCode` tetap otomatis mengikuti nomor run GitHub Actions.
+- **HomeScreen:** beranda proyek diubah menjadi dark studio; kartu/daftar proyek dan aksi proyek baru mendapat hierarki visual yang lebih jelas.
+- **MainActivity/theme:** palet dan permukaan tema gelap diselaraskan untuk tampilan studio yang konsisten.
+- **PreviewPanel:** preview stage, status/area pemutaran, dan kontrol playback dirapikan tanpa mengganti `PreviewController`, `SurfaceView`, atau engine Media3.
+- **EditorScreen:** panel preview/kanvas, timeline, tools, dan media ditata ulang agar alur kerja lebih mudah dipindai; layout adaptif portrait/landscape tetap dipertahankan.
+- **Build fix:** import `androidx.compose.foundation.background` ditambahkan pada `EditorScreen.kt` untuk memperbaiki compile error.
+- **Tidak diubah:** model/schema proyek, timeline engine/undo-redo, autosave, media import, preview controller/engine, dan export controller/pipeline.
+- **Distribusi:** CI menerbitkan `VEdit-Phase1-v0.5.1.apk` sebagai aset `.apk` langsung di GitHub Releases hanya setelah workflow sukses pada push ke `main`.
+- **Validasi:** PR CI #33 lulus unit tests, lint, assembleDebug, dan verifikasi APK untuk commit sebelum version bump. CI khusus v0.5.1 harus lulus sebelum rilis. UI v0.5.1 belum diuji fisik.
+- **Batasan:** thumbnail timeline dan waveform belum diimplementasikan; penyegaran ini tidak menambahkan fitur editing baru.

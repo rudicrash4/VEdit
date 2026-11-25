@@ -82,8 +82,8 @@ Selisih +60 s/d +95 ms konsisten pada semua kasus (granularitas frame/container)
 | Preview | durasi dan verdict diuji | **gagal sebelum perbaikan; belum diuji ulang** | belum |
 
 ## Distribusi APK
-- Artifact GitHub Actions **selalu berbentuk ZIP** (mekanisme GitHub); itu tetap diunggah untuk riwayat (artifact lama tidak dihapus).
-- APK langsung: workflow membuat **GitHub Release** `build-<nomor run>` (ditandai terbaru) berisi aset `VEdit-<Tahap>-v<versi>.apk` hanya pada push ke `main`. Tidak butuh Secrets; memakai `GITHUB_TOKEN` dengan izin `contents: write` pada job itu.
+- Artifact Actions lama pada run terdahulu memang berupa ZIP. Workflow saat ini mengunggah satu file APK dengan `archive: false` (tanpa pembungkus ZIP).
+- APK langsung: workflow membuat **GitHub Release** `build-<nomor run>` (ditandai terbaru) berisi aset `VEdit-<Tahap>-v<versi>.apk` hanya pada push ke `main`. PR/push ke branch fitur tidak menerbitkan Release. Tidak butuh Secrets untuk membuat Release; memakai `GITHUB_TOKEN` dengan izin `contents: write` pada job itu.
 - Tautan: `https://github.com/rudicrash4/VEdit/releases/latest/download/VEdit-Phase0B-v0.1.0.apk` (selalu build terbaru dengan nama itu) atau tautan per build di ringkasan run.
 - Penamaan: tahap dan versi dari `gradle.properties` (`vedit.stage`, `vedit.versionName`); `versionCode` = nomor run (selalu naik). Mengganti tahap/versi cukup mengubah dua baris itu.
 - Verifikasi di CI: `apksigner verify` dan `aapt2 dump badging` (nama VEdit, ikon launcher, applicationId `id.vedit.editor.debug` tidak berubah). Ini bukan uji pemasangan di perangkat.

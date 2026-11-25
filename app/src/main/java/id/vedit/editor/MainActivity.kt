@@ -12,6 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,7 +45,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFFB6F36B), onPrimary = Color(0xFF17200D), secondary = Color(0xFF8ED8FF), background = Color(0xFF090B10), surface = Color(0xFF12161E), surfaceVariant = Color(0xFF202632))) {
                 Surface(Modifier.fillMaxSize()) { Box(Modifier.fillMaxSize().safeDrawingPadding()) { Root() } }
             }
         }
