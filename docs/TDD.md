@@ -377,3 +377,8 @@ Paket `preview` (Android) + `domain.PreviewPlan` (murni, teruji JVM).
 - `PreviewController`: state Compose, engine diinjeksi lewat factory (unit test memakai engine palsu); seek tertunda sampai siap; galat pertama berpindah ke fallback, kedua menjadi `error`; callback setelah `release` diabaikan.
 - `EditorScreen`: `PreviewPanel` (SurfaceView 16:9); rebuild debounce 300 ms pada `PreviewPlan.structureChanged`; polling playhead 100 ms; jeda di `onStop`, release saat dispose.
 - Keputusan: rebuild membuat player baru (sederhana, benar; kerugian: jeda singkat dan pemutaran berhenti). Optimasi edit inkremental ditunda sampai ada ukuran perangkat.
+
+## 21. Addendum v0.4.0: export dan UI adaptif
+- `export.ExportController`: Transformer + komposisi `CompositionFactory` (satu definisi untuk preview dan export). Status `ExportState` (Idle/Running/Done/Failed). Output ke `getExternalFilesDir(Movies)` lalu MediaStore `Movies/VEdit` (API 29+). Pemanggilan dari main thread. Export berjalan selama aplikasi di foreground; foreground service untuk export panjang BELUM ada (risiko dihentikan saat app di background).
+- Resolusi keluaran masih tetap 1280x720 (`CompositionFactory.OUT_*`); pilihan resolusi belum ada.
+- UI adaptif: `EditorScreen` memakai `BoxWithConstraints`: `wide = maxWidth >= 640dp && maxWidth > maxHeight`. Dua panel pada layar lebar. `PreviewPanel` membatasi lebar video agar tinggi <= `maxVideoHeight` (55%/40% tinggi). Insets ditangani sekali di root (`safeDrawingPadding`).

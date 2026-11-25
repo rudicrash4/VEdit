@@ -3,6 +3,9 @@ package id.vedit.editor.ui
 import android.view.SurfaceView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -23,16 +26,20 @@ import id.vedit.editor.preview.PreviewController
 
 /** Panel preview nyata: SurfaceView 16:9 yang dirender pemutar Media3, kontrol putar/jeda, status muat/galat. */
 @Composable
-fun PreviewPanel(controller: PreviewController, playheadUs: Long, durationUs: Long) {
+fun PreviewPanel(controller: PreviewController, playheadUs: Long, durationUs: Long, maxVideoHeight: Dp) {
     val ui = controller.ui
     Column(Modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).background(Color.Black), contentAlignment = Alignment.Center) {
+        // Lebar video dibatasi tinggi maksimum agar tidak memenuhi layar pada landscape; tetap 16:9 dan di tengah.
+        BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val w = minOf(maxWidth, maxVideoHeight * (16f / 9f))
+        Box(Modifier.width(w).aspectRatio(16f / 9f).background(Color.Black), contentAlignment = Alignment.Center) {
             AndroidView(factory = { ctx -> SurfaceView(ctx).also { controller.attachSurface(it) } }, modifier = Modifier.matchParentSize())
             when {
                 !ui.hasContent -> Text("Tambahkan media ke timeline untuk melihat preview", color = Color.White, style = MaterialTheme.typography.bodySmall)
                 ui.error.isNotEmpty() -> Text("Preview gagal: ${ui.error}", color = Color(0xFFFF8A80), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(12.dp))
                 ui.loading -> CircularProgressIndicator(color = Color.White)
             }
+        }
         }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
             Button(

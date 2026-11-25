@@ -10,6 +10,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -34,7 +37,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import id.vedit.editor.export.ExportController
+import id.vedit.editor.export.ExportState
 import id.vedit.editor.data.Autosaver
 import id.vedit.editor.data.HandlerScheduler
 import id.vedit.editor.data.MediaImporter
@@ -171,16 +177,42 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
     val pickAudio = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { importFrom(it, MediaType.AUDIO) }
 
     val selected = selectedId?.let { project.clip(it) }
+    val exporter = remember(projectId) { ExportController(context) }
+    DisposableEffect(projectId) { onDispose { exporter.release() } }
 
-    Column(Modifier.verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    @Composable
+    fun Header() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = { autosaver.flushNow(); onBack() }) { Text("< Kembali") }
-            Text(project.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text(project.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 1)
             TextButton(enabled = history.canUndo, onClick = { history.undo()?.let { project = it; selectedId = null; autosaver.onChanged(it) } }) { Text("Undo") }
             TextButton(enabled = history.canRedo, onClick = { history.redo()?.let { project = it; selectedId = null; autosaver.onChanged(it) } }) { Text("Redo") }
+            Button(
+                enabled = !exporter.isRunning && project.durationUs > 0,
+                onClick = { preview.pause(); exporter.start(history.current) },
+            ) { Text("Export") }
         }
+        when (val st = exporter.state) {
+            is ExportState.Running -> Row(verticalAlignment = Alignment.CenterVertically) {
+                LinearProgressIndicator(progress = { st.percent / 100f }, modifier = Modifier.weight(1f))
+                Text("  ${st.percent}%", style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = { exporter.cancel() }) { Text("Batal") }
+            }
+            is ExportState.Done -> Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Export selesai: ${st.where}", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                TextButton(onClick = { exporter.dismiss() }) { Text("OK") }
+            }
+            is ExportState.Failed -> Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Export gagal: ${st.reason}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                TextButton(onClick = { exporter.dismiss() }) { Text("OK") }
+            }
+            ExportState.Idle -> {}
+        }
+    }
 
-        PreviewPanel(preview, playheadUs, project.durationUs)
+    @Composable
+    fun PreviewBlock(maxVideoHeight: Dp) {
+        PreviewPanel(preview, playheadUs, project.durationUs, maxVideoHeight)
         if (selected != null) {
             val src = project.source(selected.sourceId)
             Text(
@@ -189,7 +221,10 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
 
+    @Composable
+    fun TimelineBlock() {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             OutlinedButton(onClick = { seek(0) }) { Text("|<") }
             OutlinedButton(onClick = { seek(playheadUs - US_PER_SECOND) }) { Text("-1s") }
@@ -198,12 +233,14 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
             OutlinedButton(onClick = { dpPerSecond = (dpPerSecond * 0.7f).coerceAtLeast(10f) }) { Text("Zoom -") }
             OutlinedButton(onClick = { dpPerSecond = (dpPerSecond * 1.4f).coerceAtMost(400f) }) { Text("Zoom +") }
         }
-
         Timeline(
             project = project, selectedClipId = selectedId, playheadUs = playheadUs, dpPerSecond = dpPerSecond,
             onSelect = { selectClip(it) }, onSeek = { seek(it) },
         )
+    }
 
+    @Composable
+    fun ToolsBlock() {
         // Alat edit untuk klip terpilih
         Text("Alat edit", style = MaterialTheme.typography.titleSmall)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -237,6 +274,10 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
         }
         if (message.isNotEmpty()) Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
 
+    }
+
+    @Composable
+    fun MediaBlock() {
         // Media bin
         Text("Media proyek", style = MaterialTheme.typography.titleSmall)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -259,6 +300,32 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
                     val track = if (src.type == MediaType.AUDIO) Project.AUDIO_TRACK else Project.VIDEO_TRACK
                     commit(TimelineEngine.addClip(project, track, src.id, newId()))
                 }) { Text("Ke timeline") }
+            }
+        }
+    }
+
+    // Tata letak adaptif: ponsel potret = satu kolom; layar lebar/landscape/tablet = dua panel (preview+timeline | alat+media).
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val wide = maxWidth >= 640.dp && maxWidth > maxHeight
+        if (wide) {
+            Row(Modifier.fillMaxSize().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1.3f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Header()
+                    PreviewBlock((maxHeight * 0.55f).coerceAtLeast(120.dp))
+                    TimelineBlock()
+                }
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ToolsBlock()
+                    MediaBlock()
+                }
+            }
+        } else {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Header()
+                PreviewBlock((maxHeight * 0.4f).coerceAtLeast(120.dp))
+                TimelineBlock()
+                ToolsBlock()
+                MediaBlock()
             }
         }
     }

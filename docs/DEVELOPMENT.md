@@ -222,3 +222,16 @@ Do not claim universal device compatibility.
 - Signing permanen ditunda; debug key sementara dipakai (`SIGNING.md`).
 - Phase 1 (1.1-1.2): mesin timeline, penyimpanan proyek berautosave, impor SAF, shell editor. Lolos CI; belum diuji perangkat; belum ada preview (lihat `PHASE1_REPORT.md`). Versi aplikasi 0.2.0, APK `VEdit-Phase1-v0.2.0.apk`.
 - Phase 1 sub-tahap 1.3 (v0.3.0): preview nyata (CompositionPlayer + fallback ExoPlayer), sinkron playhead, kontrol putar. Lolos CI; BELUM diuji perangkat. APK `VEdit-Phase1-v0.3.0.apk`. Aturan: setiap perubahan kode memperbarui README, DEVELOPMENT, TDD, laporan fase, CHANGELOG pada commit yang sama.
+- Uji perangkat v0.3.0 (laporan pengguna): preview video, gambar, audio lancar.
+- v0.4.0: export MP4 awal + UI adaptif. Lolos CI; belum diuji perangkat. APK `VEdit-Phase1-v0.4.0.apk`.
+
+## 10. Peta jalan sampai selesai (status jujur)
+| Tahap | Isi | Status |
+|---|---|---|
+| 1.1-1.3 | Model, timeline, impor, preview | Selesai; preview diuji pengguna |
+| 1.4 | Thumbnail klip, waveform, pinch-zoom, drag klip | Belum |
+| 4 | Export: verifikasi hasil di perangkat (durasi, A/V, rotasi/crop), pilih resolusi/bitrate, notifikasi/foreground service untuk export panjang | Export dasar ada (v0.4.0), belum diuji perangkat |
+| 5 | Kecepatan (UI), kurva kecepatan, keyframe | Model/PoC ada (Phase 0B), UI belum |
+| 6 | Teks overlay, fade audio, penyesuaian warna, efek terpilih | Belum |
+| 7 | Kompatibilitas perangkat, memori/performa, regresi, signing rilis permanen, rilis | Belum; signing ditunda atas keputusan pengguna |
+Tiap tahap selesai hanya bila kriteria terpenuhi, lolos CI, dan (untuk perilaku visual/audio) terbukti di perangkat.

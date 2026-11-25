@@ -25,3 +25,8 @@
 - Pemutar dijeda di `onStop` dan dilepas saat editor ditutup.
 - Test baru: `PreviewPlanTest`, `PreviewControllerTest`, `EditorFlowTest`.
 - Belum diuji perangkat. Docs: README ditulis ulang; koreksi jumlah test di laporan Phase 1.
+
+## Phase 1 v0.4.0 (export awal + UI adaptif)
+- Export MP4 nyata: `ExportController` memakai `CompositionFactory` yang sama dengan preview (Transformer, H.264/AAC), progres, batal, galat, salin ke Movies/VEdit via MediaStore (API 29+; di bawahnya tetap di folder app). `ExportNaming` (+ test) membersihkan nama file.
+- UI adaptif: `BoxWithConstraints` memilih satu kolom (potret) atau dua panel (lebar >= 640dp dan landscape); lebar preview dibatasi tinggi layar; `safeDrawingPadding` untuk status/navigation bar dan cutout.
+- Hasil uji perangkat v0.3.0 dari pengguna: video, gambar, audio berjalan lancar. v0.4.0 belum diuji perangkat.

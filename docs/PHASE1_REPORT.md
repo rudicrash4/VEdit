@@ -82,3 +82,11 @@ Keputusan: kanvas preview tetap 1280x720 (letterbox); rotasi model searah jarum 
 
 ## Uji perangkat yang masih diperlukan
 Preview video tampil; putar/jeda; seek menggeser frame; dua klip berurutan tanpa glitch; gambar tampil sesuai durasi; audio ikut timeline dan sinkron; volume; split/trim/reorder/undo terlihat di preview; tutup/buka editor berulang (kebocoran/crash); media gagal dimuat tidak membuat crash; suhu/memori pada media panjang.
+
+---
+# v0.4.0: export awal dan UI adaptif
+- **Hasil uji perangkat v0.3.0 (laporan pengguna, tanpa rincian perangkat):** video, gambar, audio berjalan lancar di preview. Ini laporan pengguna, bukan pengukuran otomatis; A/V sync tidak diukur.
+- **Baru, belum diuji perangkat:** export MP4 (`ExportController`), tata letak adaptif, penanganan insets.
+- **Unit test:** + `ExportNamingTest`. UI Compose dan Transformer tidak punya test otomatis.
+- **Keterbatasan:** export tanpa foreground service, resolusi tetap 1280x720, hasil export belum diverifikasi (durasi/A-V/rotasi/crop) pada perangkat, API < 29 hanya menyimpan di folder app.
+- **Uji perangkat diperlukan:** export klip tunggal dan multi klip; hasil dapat diputar di galeri; durasi cocok; rotasi/crop terlihat; audio ada; batal; export lalu app ke background; tampilan potret, landscape, layar lipat/tablet.
