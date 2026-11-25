@@ -220,3 +220,4 @@ Do not claim universal device compatibility.
 - Distribusi APK: GitHub Release (APK langsung) per push ke main; artifact Actions tetap ZIP. Nama `VEdit-<Tahap>-v<versi>.apk` dari `gradle.properties`.
 - Ikon sementara adaptive sudah ada (`res/mipmap-*`, `drawable/ic_launcher_foreground.xml`).
 - Signing permanen ditunda; debug key sementara dipakai (`SIGNING.md`).
+- Phase 1 (1.1-1.2): mesin timeline, penyimpanan proyek berautosave, impor SAF, shell editor. Lolos CI; belum diuji perangkat; belum ada preview (lihat `PHASE1_REPORT.md`). Versi aplikasi 0.2.0, APK `VEdit-Phase1-v0.2.0.apk`.

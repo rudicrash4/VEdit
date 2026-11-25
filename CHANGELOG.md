@@ -15,3 +15,6 @@
 - Fix: `CompositionPlayer` preview (durationUs wajib). Verifikasi terukur: PiP, volume, mixing, ramp, A/V. Preview manual dengan Surface.
 - APK langsung lewat GitHub Release; nama `VEdit-Phase0B-v0.1.0.apk`; versionName dari `gradle.properties`.
 - Ikon adaptive sementara.
+
+## Phase 1 v0.2.0 (sub-tahap 1.1-1.2)
+- Mesin timeline murni + undo/redo, proyek JSON berversi dengan autosave atomik, impor SAF, shell editor dengan timeline. Preview belum ada.

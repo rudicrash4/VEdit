@@ -8,7 +8,10 @@
 | androidx.compose BOM / ui / material3 | 2025.09.00 | UI | Apache 2.0 | Dipakai |
 | androidx.activity:activity-compose, core-ktx | 1.10.1 / 1.16.0 | Dasar app | Apache 2.0 | Dipakai |
 | JUnit | 4.13.2 | Unit test | EPL 1.0 | Dipakai (test saja) |
+| org.jetbrains.kotlinx:kotlinx-serialization-json + plugin kotlin-serialization | 1.8.1 / Kotlin 2.1.21 | Serialisasi proyek JSON berversi (TDD 13) | Apache 2.0 (JetBrains, resmi) | Dipakai (Phase 1) |
 | FFmpeg / wrapper | - | - | LGPL/GPL tergantung konfigurasi | **Tidak ditambahkan.** Evaluasi hanya jika PoC Media3 gagal |
 | OpenCut | - | Referensi | MIT (sumber: README repo) | **Tidak dipakai** (lihat laporan) |
+
+Room tidak ditambahkan di Phase 1: indeks proyek dibaca dari direktori `files/projects/<id>/project.json`. Dievaluasi ulang jika jumlah proyek/metadata membutuhkan query.
 
 Catatan: lisensi Apache 2.0 untuk AndroidX/Media3 berasal dari pengetahuan umum, belum diverifikasi ulang per artefak di sesi ini. Verifikasi lewat POM sebelum rilis (tugas Phase 0 lanjutan).
