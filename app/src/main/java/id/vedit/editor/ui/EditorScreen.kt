@@ -45,7 +45,10 @@ import id.vedit.editor.data.Autosaver
 import id.vedit.editor.data.HandlerScheduler
 import id.vedit.editor.data.MediaImporter
 import id.vedit.editor.data.ProjectStore
+import id.vedit.editor.domain.AspectPreset
 import id.vedit.editor.domain.Crop
+import id.vedit.editor.domain.ExportPlan
+import id.vedit.editor.domain.FitMode
 import id.vedit.editor.domain.Edit
 import id.vedit.editor.domain.EditHistory
 import id.vedit.editor.domain.MediaType
@@ -121,7 +124,7 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
     }
 
     // Bangun ulang preview bila struktur proyek berubah (split/trim/urutan/impor/undo), dengan debounce.
-    LaunchedEffect(project.tracks, project.sources) {
+    LaunchedEffect(project.tracks, project.sources, project.canvas) {
         delay(300)
         preview.update(project, playheadUs)
     }
@@ -199,7 +202,7 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
                 TextButton(onClick = { exporter.cancel() }) { Text("Batal") }
             }
             is ExportState.Done -> Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Export selesai: ${st.where}", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                Text("Export selesai (${st.size}): ${st.where}", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                 TextButton(onClick = { exporter.dismiss() }) { Text("OK") }
             }
             is ExportState.Failed -> Row(verticalAlignment = Alignment.CenterVertically) {
@@ -212,7 +215,7 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
 
     @Composable
     fun PreviewBlock(maxVideoHeight: Dp) {
-        PreviewPanel(preview, playheadUs, project.durationUs, maxVideoHeight)
+        PreviewPanel(preview, playheadUs, project.durationUs, maxVideoHeight, project.canvas.aspect.ratio)
         if (selected != null) {
             val src = project.source(selected.sourceId)
             Text(
@@ -221,6 +224,26 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
+
+    @Composable
+    fun CanvasBlock() {
+        Text("Kanvas proyek (rasio hasil export)", style = MaterialTheme.typography.titleSmall)
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            AspectPreset.values().forEach { a ->
+                val on = project.canvas.aspect == a
+                val set = { commit(TimelineEngine.setCanvas(project, project.canvas.copy(aspect = a))) }
+                if (on) Button(onClick = set) { Text(a.label) } else OutlinedButton(onClick = set) { Text(a.label) }
+            }
+            FitMode.values().forEach { f ->
+                val on = project.canvas.fit == f
+                val set = { commit(TimelineEngine.setCanvas(project, project.canvas.copy(fit = f))) }
+                val label = if (f == FitMode.FIT) "Fit" else "Fill"
+                if (on) Button(onClick = set) { Text(label) } else OutlinedButton(onClick = set) { Text(label) }
+            }
+        }
+        val size = ExportPlan.sizeFor(project)
+        Text("Export: ${size.width}x${size.height} (720p). 1080p belum diaktifkan.", style = MaterialTheme.typography.bodySmall)
     }
 
     @Composable
@@ -313,6 +336,7 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
                 Column(Modifier.weight(1.3f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Header()
                     PreviewBlock((boxH * 0.55f).coerceAtLeast(120.dp))
+                    CanvasBlock()
                     TimelineBlock()
                 }
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -324,6 +348,7 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Header()
                 PreviewBlock((boxH * 0.4f).coerceAtLeast(120.dp))
+                CanvasBlock()
                 TimelineBlock()
                 ToolsBlock()
                 MediaBlock()

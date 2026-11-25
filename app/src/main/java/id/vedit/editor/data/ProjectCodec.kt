@@ -13,7 +13,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * Dokumen dari versi lebih baru ditolak (bukan dirusak). Kunci tak dikenal diabaikan dalam versi yang sama.
  */
 class ProjectCodec(
-    private val migrations: Map<Int, (JsonObject) -> JsonObject> = emptyMap(),
+    private val migrations: Map<Int, (JsonObject) -> JsonObject> = DEFAULT_MIGRATIONS,
     private val currentVersion: Int = Project.CURRENT_SCHEMA,
 ) {
     private val json = Json {
@@ -37,5 +37,13 @@ class ProjectCodec(
         val problems = project.validate()
         check(problems.isEmpty()) { "Proyek tidak valid: ${problems.first()}" }
         project
+    }
+
+    companion object {
+        /**
+         * v1 -> v2: menambah `canvas` (rasio + fit). Dokumen v1 tidak punya kunci itu, sehingga default (16:9, FIT)
+         * dipakai oleh deserializer; migrasi hanya menaikkan versi tanpa mengubah isi (proyek lama tetap identik).
+         */
+        val DEFAULT_MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to { o: JsonObject -> o })
     }
 }

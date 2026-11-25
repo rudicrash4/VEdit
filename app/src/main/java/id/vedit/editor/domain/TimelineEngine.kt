@@ -129,6 +129,8 @@ object TimelineEngine {
         return Edit.Ok(p.withTrack(track.copy(clips = track.clips.map { if (it.id == clipId) it.copy(crop = crop) else it })), clipId)
     }
 
+    fun setCanvas(p: Project, canvas: CanvasSettings): Edit = Edit.Ok(p.copy(canvas = canvas))
+
     /** Klip di track tertentu yang mencakup waktu timeline (setengah-terbuka [start, end)). */
     fun clipAt(p: Project, trackId: String, timeUs: Long): Clip? =
         p.tracks.firstOrNull { it.id == trackId }?.clips?.firstOrNull { timeUs >= it.startUs && timeUs < it.endUs }

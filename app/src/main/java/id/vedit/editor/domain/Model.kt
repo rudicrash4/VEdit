@@ -76,6 +76,7 @@ data class Project(
     val tracks: List<Track>,
     val createdAtMs: Long,
     val modifiedAtMs: Long,
+    val canvas: CanvasSettings = CanvasSettings(),
 ) {
     val durationUs: Long get() = tracks.maxOfOrNull { t -> t.clips.maxOfOrNull { it.endUs } ?: 0L } ?: 0L
 
@@ -105,7 +106,7 @@ data class Project(
     }
 
     companion object {
-        const val CURRENT_SCHEMA = 1
+        const val CURRENT_SCHEMA = 2
         const val VIDEO_TRACK = "v1"
         const val AUDIO_TRACK = "a1"
 

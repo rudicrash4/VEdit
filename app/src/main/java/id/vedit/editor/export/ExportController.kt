@@ -20,6 +20,8 @@ import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
 import id.vedit.editor.domain.ExportNaming
+import id.vedit.editor.domain.ExportPlan
+import id.vedit.editor.domain.OutputQuality
 import id.vedit.editor.domain.Project
 import id.vedit.editor.preview.CompositionFactory
 import java.io.File
@@ -28,7 +30,7 @@ import java.util.concurrent.Executors
 sealed interface ExportState {
     data object Idle : ExportState
     data class Running(val percent: Int) : ExportState
-    data class Done(val where: String) : ExportState
+    data class Done(val where: String, val size: String = "") : ExportState
     data class Failed(val reason: String) : ExportState
 }
 
@@ -58,7 +60,9 @@ class ExportController(private val ctx: Context) {
 
     fun start(project: Project) {
         if (isRunning || released) return
-        val composition = CompositionFactory.build(project)
+        val quality = OutputQuality.P720 // hanya kualitas yang terbukti di perangkat; 1080p belum diaktifkan
+        val size = ExportPlan.sizeFor(project, quality)
+        val composition = CompositionFactory.build(project, quality)
         if (composition == null) {
             state = ExportState.Failed("Tidak ada konten di timeline untuk diexport.")
             return
@@ -77,7 +81,7 @@ class ExportController(private val ctx: Context) {
                 }
                 io.execute {
                     val where = runCatching { publish(file) }.getOrElse { file.absolutePath }
-                    main.post { if (!released) state = ExportState.Done(where) }
+                    main.post { if (!released) state = ExportState.Done(where, "${size.width}x${size.height}") }
                 }
             }
 

@@ -382,3 +382,11 @@ Paket `preview` (Android) + `domain.PreviewPlan` (murni, teruji JVM).
 - `export.ExportController`: Transformer + komposisi `CompositionFactory` (satu definisi untuk preview dan export). Status `ExportState` (Idle/Running/Done/Failed). Output ke `getExternalFilesDir(Movies)` lalu MediaStore `Movies/VEdit` (API 29+). Pemanggilan dari main thread. Export berjalan selama aplikasi di foreground; foreground service untuk export panjang BELUM ada (risiko dihentikan saat app di background).
 - Resolusi keluaran masih tetap 1280x720 (`CompositionFactory.OUT_*`); pilihan resolusi belum ada.
 - UI adaptif: `EditorScreen` memakai `BoxWithConstraints`: `wide = maxWidth >= 640dp && maxWidth > maxHeight`. Dua panel pada layar lebar. `PreviewPanel` membatasi lebar video agar tinggi <= `maxVideoHeight` (55%/40% tinggi). Insets ditangani sekali di root (`safeDrawingPadding`).
+
+## 22. Addendum v0.5.0: kanvas, kualitas, dan optimasi preview
+- Tiga konsep terpisah: (1) rasio kanvas = `Project.canvas.aspect` (disimpan); (2) resolusi output = `OutputQuality` (sisi pendek; bukan bagian proyek); (3) ukuran tampilan preview = urusan UI (`PreviewPanel`, dibatasi tinggi layar). Ukuran frame = `CanvasSpec.size(aspect, shortSide)`, dibulatkan ke genap. Tabel: 720p 1280x720 / 720x1280 / 720x720 / 720x900; 1080p 1920x1080 / 1080x1920 / 1080x1080 / 1080x1350 (belum aktif).
+- Penempatan media: `FitMode.FIT` -> `Presentation.LAYOUT_SCALE_TO_FIT`; `FILL` -> `LAYOUT_SCALE_TO_FIT_WITH_CROP`. Urutan efek per klip: Crop -> Rotasi -> Presentation, sehingga crop/rotasi bekerja pada semua rasio dan rasio sumber tidak diubah (hanya diskalakan seragam).
+- Preview vs export memakai SATU `CompositionFactory.build` dengan parameter kualitas; rasio/fit selalu dari proyek. Preview = PREVIEW (480), export = P720. Kualitas export tidak diturunkan.
+- Schema proyek 2: kunci `canvas`; migrasi 1->2 identitas (default 16:9 FIT dari deserializer). Tes memakai dokumen v1 nyata.
+- `PreviewController.update` tidak membangun ulang pemutar bila `structureChanged` salah (struktur = track, sumber, kanvas). Metrik `lastBuildMs`/`buildCount` diukur di perangkat.
+- Engine preview tetap `CompositionPlayer` (tidak diganti; belum ada bukti teknis perlu).

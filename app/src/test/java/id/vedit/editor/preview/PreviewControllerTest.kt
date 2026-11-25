@@ -1,7 +1,10 @@
 package id.vedit.editor.preview
 
 import android.view.SurfaceView
+import id.vedit.editor.domain.AspectPreset
+import id.vedit.editor.domain.CanvasSettings
 import id.vedit.editor.domain.Clip
+import id.vedit.editor.domain.FitMode
 import id.vedit.editor.domain.MediaSource
 import id.vedit.editor.domain.MediaType
 import id.vedit.editor.domain.Project
@@ -97,10 +100,35 @@ class PreviewControllerTest {
     fun rebuildReleasesPreviousEngine() {
         val c = controller()
         c.update(project(), 0)
-        c.update(project(), 2 * s)
+        c.update(project().copy(canvas = CanvasSettings(AspectPreset.R9_16)), 2 * s)
         assertTrue(engines[0].released)
         assertFalse(engines[1].released)
         assertEquals(2 * s, engines[1].loaded!!.second)
+    }
+
+    @Test
+    fun unchangedStructureDoesNotRebuildPlayerOnlyFollowsPosition() {
+        val c = controller()
+        c.update(project(), 0)
+        engines[0].cb.onReady()
+        c.update(project().copy(name = "rename", modifiedAtMs = 5), 3 * s)
+        assertEquals(1, engines.size)
+        assertFalse(engines[0].released)
+        assertEquals(1, c.ui.buildCount)
+        assertEquals(3 * s, engines[0].seeks.last())
+    }
+
+    @Test
+    fun canvasChangeTriggersRebuildAndBuildTimeIsMeasured() {
+        var now = 1000L
+        val c = PreviewController({ now }) { cb, fb -> FakeEngine(cb, fb).also { engines += it } }
+        c.update(project(), 0)
+        now = 1450L
+        engines[0].cb.onReady()
+        assertEquals(450L, c.ui.lastBuildMs)
+        c.update(project().copy(canvas = CanvasSettings(fit = FitMode.FILL)), 0)
+        assertEquals(2, engines.size)
+        assertEquals(2, c.ui.buildCount)
     }
 
     @Test

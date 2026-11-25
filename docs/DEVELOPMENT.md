@@ -230,8 +230,9 @@ Do not claim universal device compatibility.
 |---|---|---|
 | 1.1-1.3 | Model, timeline, impor, preview | Selesai; preview diuji pengguna |
 | 1.4 | Thumbnail klip, waveform, pinch-zoom, drag klip | Belum |
-| 4 | Export: verifikasi hasil di perangkat (durasi, A/V, rotasi/crop), pilih resolusi/bitrate, notifikasi/foreground service untuk export panjang | Export dasar ada (v0.4.0), belum diuji perangkat |
+| 4 | Export: pilih resolusi (1080p), bitrate, foreground service untuk export panjang | Export 720p berhasil di OPPO A18 (v0.4.0); rasio kanvas ada (v0.5.0, belum diuji); 1080p belum aktif |
 | 5 | Kecepatan (UI), kurva kecepatan, keyframe | Model/PoC ada (Phase 0B), UI belum |
 | 6 | Teks overlay, fade audio, penyesuaian warna, efek terpilih | Belum |
 | 7 | Kompatibilitas perangkat, memori/performa, regresi, signing rilis permanen, rilis | Belum; signing ditunda atas keputusan pengguna |
 Tiap tahap selesai hanya bila kriteria terpenuhi, lolos CI, dan (untuk perilaku visual/audio) terbukti di perangkat.
+- v0.5.0: rasio kanvas + optimasi preview (lihat PHASE1_REPORT). Lolos CI; belum diuji perangkat. Hasil uji v0.4.0 di OPPO A18: semua lancar, preview agak lag.

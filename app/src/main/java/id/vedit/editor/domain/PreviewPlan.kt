@@ -48,9 +48,9 @@ object PreviewPlan {
     fun toTimelineUs(sortedClips: List<Clip>, index: Int, offsetUs: Long): Long =
         sortedClips[index.coerceIn(0, sortedClips.lastIndex)].startUs + offsetUs
 
-    /** Preview perlu dibangun ulang hanya bila isi track/sumber berubah (bukan nama atau waktu modifikasi). */
+    /** Preview perlu dibangun ulang hanya bila isi track/sumber berubah (termasuk kanvas; bukan nama atau waktu modifikasi). */
     fun structureChanged(old: Project?, new: Project): Boolean =
-        old == null || old.tracks != new.tracks || old.sources != new.sources
+        old == null || old.tracks != new.tracks || old.sources != new.sources || old.canvas != new.canvas
 
     fun hasPlayableContent(p: Project): Boolean = p.durationUs > 0 && p.tracks.any { t -> t.clips.isNotEmpty() }
 

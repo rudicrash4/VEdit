@@ -1,5 +1,6 @@
 package id.vedit.editor.preview
 
+import id.vedit.editor.domain.OutputQuality
 import android.content.Context
 import android.view.SurfaceView
 import androidx.annotation.OptIn
@@ -32,7 +33,7 @@ class CompositionEngine(private val context: Context, private val cb: EngineCall
         releasePlayer()
         startUs = startPositionUs
         val composition = try {
-            CompositionFactory.build(project)
+            CompositionFactory.build(project, OutputQuality.PREVIEW)
         } catch (t: Throwable) {
             cb.onError("Gagal menyusun komposisi: ${Analysis.describeThrowable(t)}")
             return

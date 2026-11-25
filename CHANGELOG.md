@@ -30,3 +30,12 @@
 - Export MP4 nyata: `ExportController` memakai `CompositionFactory` yang sama dengan preview (Transformer, H.264/AAC), progres, batal, galat, salin ke Movies/VEdit via MediaStore (API 29+; di bawahnya tetap di folder app). `ExportNaming` (+ test) membersihkan nama file.
 - UI adaptif: `BoxWithConstraints` memilih satu kolom (potret) atau dua panel (lebar >= 640dp dan landscape); lebar preview dibatasi tinggi layar; `safeDrawingPadding` untuk status/navigation bar dan cutout.
 - Hasil uji perangkat v0.3.0 dari pengguna: video, gambar, audio berjalan lancar. v0.4.0 belum diuji perangkat.
+
+## Phase 1 v0.5.0 (rasio kanvas + optimasi preview)
+- Hasil uji perangkat v0.4.0 (OPPO A18, API 35, laporan pengguna): semua fitur utama dan export berhasil; preview agak lag; rasio export mengikuti 16:9 tetap.
+- Model: `Project.canvas` (`CanvasSettings`: `AspectPreset` 16:9/9:16/1:1/4:5, `FitMode` FIT/FILL); schema 1 -> 2 dengan migrasi (proyek lama = 16:9 FIT). `TimelineEngine.setCanvas` (masuk undo/redo).
+- `CanvasSpec`/`OutputQuality`/`ExportPlan`: rasio kanvas, resolusi keluaran, dan ukuran tampilan dipisah. Export 720p aktif; 1080p ada di kode tapi `exportEnabled=false`.
+- `CompositionFactory.build(project, quality)`: Presentation mengikuti ukuran kanvas dan Fit/Fill; preview memakai `PREVIEW` (480), export `P720`.
+- Preview: tidak membangun ulang pemutar bila struktur tidak berubah; metrik waktu siap (`lastBuildMs`) dan jumlah build tampil di panel.
+- UI: pemilih rasio dan Fit/Fill di bawah preview; panel preview mengikuti rasio kanvas.
+- Test: `CanvasTest` (dimensi semua preset, migrasi v1, undo/redo, round trip), tambahan `PreviewControllerTest`.

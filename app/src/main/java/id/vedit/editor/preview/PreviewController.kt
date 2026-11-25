@@ -16,6 +16,9 @@ data class PreviewUiState(
     val engineName: String = "",
     val notice: String = "",
     val error: String = "",
+    /** Waktu (ms) dari memulai pembangunan hingga siap, terukur di perangkat; -1 = belum ada. */
+    val lastBuildMs: Long = -1,
+    val buildCount: Int = 0,
 )
 
 /**
@@ -23,6 +26,7 @@ data class PreviewUiState(
  * CompositionPlayer gagal. Semua dipanggil dari main thread. `release()` wajib saat layar ditutup.
  */
 class PreviewController(
+    private val clockMs: () -> Long = { System.nanoTime() / 1_000_000L },
     /** (callbacks, pakaiCadangan) -> mesin. Diinjeksi agar controller bisa diuji tanpa perangkat. */
     private val factory: (EngineCallbacks, Boolean) -> PreviewEngine,
 ) : EngineCallbacks {
@@ -35,6 +39,7 @@ class PreviewController(
     private var usingFallback = false
     private var wantedPositionUs = 0L
     private var released = false
+    private var buildStartMs = 0L
 
     val positionUs: Long get() = engine?.positionUs ?: wantedPositionUs
 
@@ -46,7 +51,13 @@ class PreviewController(
     /** Dipanggil saat struktur proyek berubah. Playback dihentikan; posisi dipertahankan. */
     fun update(project: Project, positionUs: Long) {
         if (released) return
+        val unchanged = engine != null && ui.error.isEmpty() && !PreviewPlan.structureChanged(this.project, project)
         this.project = project
+        if (unchanged) {
+            // Struktur sama: tidak perlu membangun ulang pemutar (mahal); cukup ikuti posisi.
+            seekTo(positionUs)
+            return
+        }
         wantedPositionUs = PreviewPlan.clampPlayhead(positionUs, project.durationUs)
         if (!PreviewPlan.hasPlayableContent(project)) {
             engine?.release()
@@ -63,7 +74,8 @@ class PreviewController(
         val e = factory(this, usingFallback)
         engine = e
         e.attach(surface)
-        ui = ui.copy(hasContent = true, loading = true, ready = false, isPlaying = false, engineName = e.name, error = "")
+        buildStartMs = clockMs()
+        ui = ui.copy(hasContent = true, loading = true, ready = false, isPlaying = false, engineName = e.name, error = "", buildCount = ui.buildCount + 1)
         e.load(p, wantedPositionUs)
     }
 
@@ -94,7 +106,7 @@ class PreviewController(
 
     // --- EngineCallbacks (main thread)
     override fun onReady() {
-        ui = ui.copy(loading = false, ready = true, error = "")
+        ui = ui.copy(loading = false, ready = true, error = "", lastBuildMs = clockMs() - buildStartMs)
         engine?.seekTo(wantedPositionUs)
     }
 

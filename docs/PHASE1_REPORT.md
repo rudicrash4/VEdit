@@ -90,3 +90,34 @@ Preview video tampil; putar/jeda; seek menggeser frame; dua klip berurutan tanpa
 - **Unit test:** + `ExportNamingTest`. UI Compose dan Transformer tidak punya test otomatis.
 - **Keterbatasan:** export tanpa foreground service, resolusi tetap 1280x720, hasil export belum diverifikasi (durasi/A-V/rotasi/crop) pada perangkat, API < 29 hanya menyimpan di folder app.
 - **Uji perangkat diperlukan:** export klip tunggal dan multi klip; hasil dapat diputar di galeri; durasi cocok; rotasi/crop terlihat; audio ada; batal; export lalu app ke background; tampilan potret, landscape, layar lipat/tablet.
+
+---
+# v0.5.0: rasio kanvas dan optimasi preview
+
+## Hasil uji perangkat v0.4.0 (laporan pengguna; OPPO A18 CPH2591, API 35)
+Berhasil: aplikasi, impor video/gambar/audio, timeline, edit, rotasi, crop, preview video/gambar/audio, export MP4 (hasil bagus, tanpa kesalahan visual yang ditemukan pengguna). Catatan: preview agak lag; rasio export masih mengikuti 16:9. Tidak ada benchmark numerik yang dilaporkan.
+
+## Investigasi lag preview (jujur: berdasarkan pembacaan kode, BELUM diprofil di perangkat)
+Kandidat penyebab pada kode v0.4.0:
+1. Preview dirender pada 1280x720 melalui pipeline efek GL (Presentation selalu aktif), padahal OPPO A18 kelas menengah-bawah. Ukuran frame menentukan biaya setiap frame.
+2. Setiap pemanggilan `update` membangun ulang `CompositionPlayer` walau struktur tidak berubah, dan setiap perubahan struktur menghentikan pemutaran.
+3. Tidak ada metrik waktu muat sehingga lag tak terukur.
+Efek crop/rotasi sudah hanya ditambahkan jika dipakai (bukan penyebab pada klip tanpa edit). Polling playhead 100 ms hanya merekomposisi blok yang membaca playhead.
+
+## Optimasi yang diterapkan
+- Preview memakai kualitas PREVIEW (sisi pendek 480; 16:9 = 854x480, sekitar 44% piksel dari 720p). Export tetap 720p; kualitas export tidak diturunkan.
+- `PreviewController.update` melewati pembangunan ulang bila struktur (track, sumber, kanvas) tidak berubah.
+- Metrik terukur di perangkat ditampilkan di panel preview: "siap X ms (#jumlah build)".
+- NOT diubah: engine tetap `CompositionPlayer`; tidak ada bukti teknis untuk menggantinya.
+- **Belum ada hasil benchmark.** Efek nyata terhadap lag harus dinilai pengguna di OPPO A18; angka "siap X ms" dapat dilaporkan balik.
+
+## Sistem rasio kanvas
+Pilihan 16:9, 9:16, 1:1, 4:5 + Fit/Fill; tersimpan di proyek (schema 2); preview dan export memakai konfigurasi sama; ukuran frame export mengikuti rasio. Resolusi yang benar-benar aktif untuk export: **720p saja** (1280x720, 720x1280, 720x720, 720x900). 1080p tersedia di kode tetapi dinonaktifkan; BELUM diuji, tidak diklaim berhasil. Export di rasio selain 16:9 belum diuji perangkat.
+
+## Model dan migrasi
+`Project.canvas`, schema 1 -> 2. Proyek lama dibaca dengan default 16:9 FIT (diuji dengan dokumen v1 nyata di `CanvasTest`). Undo/redo mencakup perubahan kanvas; autosave menyimpan; round trip JSON diuji.
+
+## Pengujian
+- **Unit test (JVM, CI):** `CanvasTest` (dimensi semua preset, genap, rasio, preview < export, rencana export mengikuti kanvas dan menolak 1080p, default, round trip + undo/redo, migrasi v1, perubahan kanvas memicu rebuild), `PreviewControllerTest` (+ tanpa rebuild bila struktur sama, rebuild saat kanvas berubah, metrik waktu). Hasil CI dicatat di laporan akhir.
+- **Perangkat:** v0.5.0 belum diuji.
+- **Perlu diuji di OPPO A18:** apakah preview lebih lancar (laporkan "siap X ms"); ganti rasio 9:16/1:1/4:5 dan lihat kanvas preview; export tiap rasio (cek dimensi file, tidak melar); Fit vs Fill; video landscape di kanvas portrait dan sebaliknya; gambar persegi; crop + rotasi di semua rasio; tutup/buka ulang proyek (rasio tetap); proyek lama dari v0.4.0 tetap terbuka.

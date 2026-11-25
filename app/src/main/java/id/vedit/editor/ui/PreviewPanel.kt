@@ -26,13 +26,13 @@ import id.vedit.editor.preview.PreviewController
 
 /** Panel preview nyata: SurfaceView 16:9 yang dirender pemutar Media3, kontrol putar/jeda, status muat/galat. */
 @Composable
-fun PreviewPanel(controller: PreviewController, playheadUs: Long, durationUs: Long, maxVideoHeight: Dp) {
+fun PreviewPanel(controller: PreviewController, playheadUs: Long, durationUs: Long, maxVideoHeight: Dp, aspect: Float = 16f / 9f) {
     val ui = controller.ui
     Column(Modifier.fillMaxWidth()) {
         // Lebar video dibatasi tinggi maksimum agar tidak memenuhi layar pada landscape; tetap 16:9 dan di tengah.
         BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        val w = minOf(maxWidth, maxVideoHeight * (16f / 9f))
-        Box(Modifier.width(w).aspectRatio(16f / 9f).background(Color.Black), contentAlignment = Alignment.Center) {
+        val w = minOf(maxWidth, maxVideoHeight * aspect)
+        Box(Modifier.width(w).aspectRatio(aspect).background(Color.Black), contentAlignment = Alignment.Center) {
             AndroidView(factory = { ctx -> SurfaceView(ctx).also { controller.attachSurface(it) } }, modifier = Modifier.matchParentSize())
             when {
                 !ui.hasContent -> Text("Tambahkan media ke timeline untuk melihat preview", color = Color.White, style = MaterialTheme.typography.bodySmall)
@@ -51,7 +51,10 @@ fun PreviewPanel(controller: PreviewController, playheadUs: Long, durationUs: Lo
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
             )
-            if (ui.engineName.isNotEmpty()) Text(ui.engineName, style = MaterialTheme.typography.labelSmall)
+            if (ui.engineName.isNotEmpty()) Text(
+                ui.engineName + if (ui.lastBuildMs >= 0) " | siap ${ui.lastBuildMs} ms (#${ui.buildCount})" else "",
+                style = MaterialTheme.typography.labelSmall,
+            )
         }
         if (ui.notice.isNotEmpty()) Text(ui.notice, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
     }
