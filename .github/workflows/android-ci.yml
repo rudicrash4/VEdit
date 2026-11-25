@@ -102,12 +102,34 @@ jobs:
           STAGE: ${{ steps.apk.outputs.stage }}
         run: |
           TAG="build-${GITHUB_RUN_NUMBER}"
-          NOTES="APK debug (debug key sementara) untuk pengujian. Commit ${GITHUB_SHA::7}, build ${GITHUB_RUN_NUMBER}. Bukan rilis produksi."
+          NOTES="$(cat <<EOF
+## VEdit ${STAGE} v${VERSION}
+
+### Perubahan UI
+- HomeScreen: beranda proyek dark studio; kartu/daftar proyek dan aksi proyek baru lebih jelas.
+- MainActivity: tema gelap dan palet visual aplikasi diselaraskan.
+- PreviewPanel: preview stage dan kontrol playback dirapikan; pemutar lama dipertahankan.
+- EditorScreen: panel preview/kanvas, timeline, tools, dan media ditata ulang; layout adaptif dipertahankan.
+- Perbaikan compile: import androidx.compose.foundation.background ditambahkan.
+- Tidak ada perubahan pada model proyek, timeline engine, autosave, media import, preview engine/controller, atau export controller.
+
+### Perubahan lainnya
+- Version name dinaikkan dari 0.5.0 ke 0.5.1.
+- Workflow dan dokumentasi diperbarui agar Release berisi APK langsung dan catatan perubahan yang jelas.
+- Thumbnail timeline dan waveform belum tersedia; tidak termasuk dalam perubahan ini.
+
+### Validasi
+- Commit: ${GITHUB_SHA::7}; build: ${GITHUB_RUN_NUMBER}.
+- Unit tests, lint, assembleDebug, dan verifikasi APK harus berhasil sebelum langkah Release dijalankan.
+- Uji instalasi dan fungsi pada perangkat fisik untuk build ini belum dikonfirmasi.
+- APK debug untuk pengujian, bukan rilis produksi. Jika tidak ada signing secret, APK menggunakan debug key sementara.
+EOF
+)"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "dist/${NAME}" --clobber
           else
             gh release create "$TAG" "dist/${NAME}" --target "$GITHUB_SHA" \
-              --title "VEdit ${STAGE} v${VERSION} (build ${GITHUB_RUN_NUMBER})" --notes "$NOTES" --latest
+              --title "VEdit ${STAGE} v${VERSION} — UI/UX refresh (build ${GITHUB_RUN_NUMBER})" --notes "$NOTES" --latest
           fi
           {
             echo "- Unduh APK langsung: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${NAME}"
