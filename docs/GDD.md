@@ -348,9 +348,10 @@ The MVP is accepted only if:
 - Build system: GitHub Actions.
 
 
-## UI/UX visual direction update — PR #1
+## UI/UX visual direction and implementation — PR #2 (v0.5.1)
 - Referensi pengalaman: editor video mobile yang mudah dipahami seperti CapCut; bukan menyalin aset/branding.
 - Visual: dark-first, kontras teks yang memadai, aksen lime untuk aksi utama, permukaan panel yang konsisten.
 - Prioritas layar ponsel portrait: preview sebagai fokus, timeline dan aksi editing mudah ditemukan, media import tidak menguasai seluruh layar.
 - Tombol hanya boleh ditampilkan jika terhubung ke fungsi nyata; fitur yang belum ada tetap tidak boleh disamarkan sebagai fitur aktif.
-- Perubahan ini merupakan penyegaran visual awal, bukan klaim bahwa seluruh target layout GDD (thumbnail, waveform, contextual inspector) telah selesai.
+- Implementasi v0.5.1: `HomeScreen` menjadi beranda dark studio; `MainActivity` menerapkan tema gelap; `PreviewPanel` merapikan preview stage/kontrol playback; `EditorScreen` menata panel preview/kanvas, timeline, tools, dan media sambil mempertahankan layout adaptif.
+- Batas implementasi: refresh ini hanya menyentuh presentasi UI. Thumbnail, waveform, dan contextual inspector penuh tetap merupakan pekerjaan terpisah dan belum diklaim selesai.
