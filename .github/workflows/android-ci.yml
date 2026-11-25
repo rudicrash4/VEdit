@@ -102,26 +102,7 @@ jobs:
           STAGE: ${{ steps.apk.outputs.stage }}
         run: |
           TAG="build-${GITHUB_RUN_NUMBER}"
-          NOTES="## VEdit ${STAGE} v${VERSION}
-
-### Perubahan UI
-- HomeScreen: beranda proyek dark studio; kartu/daftar proyek dan aksi proyek baru lebih jelas.
-- MainActivity: tema gelap dan palet visual aplikasi diselaraskan.
-- PreviewPanel: preview stage dan kontrol playback dirapikan; pemutar lama dipertahankan.
-- EditorScreen: panel preview/kanvas, timeline, tools, dan media ditata ulang; layout adaptif dipertahankan.
-- Perbaikan compile: import androidx.compose.foundation.background ditambahkan.
-- Model proyek, timeline engine, autosave, media import, preview engine/controller, dan export controller tidak diubah.
-
-### Perubahan lainnya
-- Version name dinaikkan dari 0.5.0 ke 0.5.1.
-- Workflow dan dokumentasi diperbarui untuk menerbitkan APK langsung di Releases.
-- Thumbnail timeline dan waveform belum tersedia dan tidak termasuk dalam perubahan ini.
-
-### Validasi
-- Commit: ${GITHUB_SHA::7}; build: ${GITHUB_RUN_NUMBER}.
-- Unit tests, lint, assembleDebug, dan verifikasi APK wajib lulus sebelum Release.
-- Uji instalasi dan fungsi pada perangkat fisik untuk build ini belum dikonfirmasi.
-- APK debug untuk pengujian, bukan rilis produksi. Jika signing secret tidak tersedia, APK memakai debug key sementara."
+          NOTES="VEdit ${STAGE} v${VERSION}. Perubahan UI: HomeScreen dark studio dengan daftar/kartu proyek dan aksi proyek baru lebih jelas; MainActivity tema gelap/palet diselaraskan; PreviewPanel preview stage dan kontrol playback dirapikan; EditorScreen panel preview/kanvas, timeline, tools, dan media ditata ulang dengan layout adaptif. Perbaikan compile: import androidx.compose.foundation.background. Tidak mengubah model/schema proyek, timeline engine, autosave, media import, preview engine/controller, atau export controller. Version name 0.5.0 ke 0.5.1. Thumbnail timeline dan waveform belum tersedia. Validasi CI harus lulus; uji fisik build ini belum dikonfirmasi. APK debug untuk pengujian, bukan rilis produksi; tanpa signing secret memakai debug key sementara. Commit ${GITHUB_SHA::7}, build ${GITHUB_RUN_NUMBER}."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "dist/${NAME}" --clobber
           else
