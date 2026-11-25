@@ -369,3 +369,11 @@ A feature is done only when:
 - Update setelah uji CPH2591: `CompositionPlayer` mewajibkan `EditedMediaItem.setDurationUs(durasi sumber tanpa clipping)`; tanpa itu `checkState` tanpa pesan melempar `IllegalStateException`. Aturan arsitektur: SATU builder `Composition` dipakai preview dan export, dan setiap `EditedMediaItem` selalu membawa durationUs.
 - Verifikasi export wajib terukur, bukan hanya durasi: RMS audio (volume/mixing), pixel diff (PiP), timestamp frame (ramp). Logika verifikasi murni ada di `poc/Analysis.kt` dan diuji unit.
 - Phase 1 (keputusan): satu modul `:app` berpaket `domain`/`data`/`ui`; persistensi proyek = file JSON berversi (schema 1) dengan tulis atomik + cadangan, Room belum dipakai. Detail di `docs/PHASE1_REPORT.md`.
+
+## 20. Addendum Phase 1.3: arsitektur preview
+Paket `preview` (Android) + `domain.PreviewPlan` (murni, teruji JVM).
+- `CompositionFactory`: Project ke `Composition` Media3 (sama dengan jalur export). Track video = satu `EditedMediaItemSequence` (klip + `addGap`, tanpa gap akhir); track audio = sequence audio-only terpisah. Semua item wajib `durationUs` (akar galat `IllegalStateException` Phase 0B). Efek video: Crop (NDC), `ScaleAndRotateTransformation` (sudut dinegasikan; model searah jarum jam), `Presentation` 1280x720 scale-to-fit. Volume: `ChannelMixingAudioProcessor`; kecepatan: `SpeedProvider` konstan.
+- `PreviewEngine` (antarmuka) dengan `CompositionEngine` (utama) dan `ExoEngine` (fallback ExoPlayer playlist V1; tanpa gap/audio tambahan/efek).
+- `PreviewController`: state Compose, engine diinjeksi lewat factory (unit test memakai engine palsu); seek tertunda sampai siap; galat pertama berpindah ke fallback, kedua menjadi `error`; callback setelah `release` diabaikan.
+- `EditorScreen`: `PreviewPanel` (SurfaceView 16:9); rebuild debounce 300 ms pada `PreviewPlan.structureChanged`; polling playhead 100 ms; jeda di `onStop`, release saat dispose.
+- Keputusan: rebuild membuat player baru (sederhana, benar; kerugian: jeda singkat dan pemutaran berhenti). Optimasi edit inkremental ditunda sampai ada ukuran perangkat.

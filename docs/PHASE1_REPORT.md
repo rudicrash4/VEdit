@@ -1,4 +1,4 @@
-# Laporan Phase 1 (sub-tahap 1.1 dan 1.2)
+# Laporan Phase 1 (sub-tahap 1.1 - 1.3)
 
 Status: **fondasi dibangun, lolos CI. Belum diuji di perangkat fisik.** Preview video, playback, dan thumbnail BELUM ada.
 
@@ -31,7 +31,7 @@ Pemisahan ke modul `core:model` / `core:project` dilakukan saat batasnya stabil.
 - Konversi frame ke mikrodetik dan sebaliknya identik pada 30000/1001, 24000/1001, 25, 60 fps (tanpa drift).
 
 ## Pengujian (dipisah)
-- **Unit test (JVM, CI):** 7 test speed/analisis Phase 0B tetap lolos, ditambah `TimeTest`, `TimelineEngineTest`, `EditHistoryTest`, `ProjectCodecTest` (round trip, kunci tak dikenal, schema lebih baru ditolak, rantai migrasi), `ProjectStoreTest` (simpan/muat/daftar, pemulihan dari cadangan, file rusak dilewati, path traversal ditolak), `AutosaverTest` (debounce, flush).
+- **Unit test (JVM, CI):** test speed/analisis Phase 0B tetap lolos (koreksi: sebelumnya tertulis "7 test"; total di v0.2.0 adalah 52 `@Test`), ditambah `TimeTest`, `TimelineEngineTest`, `EditHistoryTest`, `ProjectCodecTest` (round trip, kunci tak dikenal, schema lebih baru ditolak, rantai migrasi), `ProjectStoreTest` (simpan/muat/daftar, pemulihan dari cadangan, file rusak dilewati, path traversal ditolak), `AutosaverTest` (debounce, flush).
 - **Build/lint/CI:** lolos pada run 45530489137 (commit 4297b27). Lint sempat menangkap pemakaian `java.nio.file` (API 26) yang tidak cocok minSdk 24; diganti `File.renameTo`.
 - **Perangkat fisik:** **belum**. UI Compose (shell, timeline, impor SAF, autosave/reopen) tidak punya test otomatis; hanya terbukti kompilasi.
 
@@ -47,3 +47,38 @@ Pemisahan ke modul `core:model` / `core:project` dilakukan saat batasnya stabil.
 
 ## Berikutnya
 1.3 Preview: pemutaran klip terpilih/komposisi (CompositionPlayer atau ExoPlayer sesuai hasil uji Phase 0B), kontrol putar, thumbnail. 1.4 Menerapkan rotasi/crop pada preview dan export. Menunggu hasil uji perangkat Phase 0B (build v0.1.0) untuk keputusan engine preview.
+
+
+---
+# Sub-tahap 1.3: Preview video nyata (v0.3.0)
+
+Status: **diimplementasikan dan lolos CI (unit test, lint, assembleDebug). BELUM diverifikasi di perangkat fisik.** Jangan dibaca sebagai "preview terbukti tampil benar".
+
+## Yang dibangun
+| Kebutuhan | Implementasi | Bukti |
+|---|---|---|
+| Video, putar/jeda, seek, multi klip, transisi antar klip | `CompositionFactory` membuat satu sequence video (klip + `addGap`) untuk `CompositionPlayer` | Unit test logika (`PreviewPlanTest`); tampilan: perlu perangkat |
+| Gambar (durasi mengikuti timeline) | `setImageDurationMs` + `EditedMediaItem.setDurationUs(clip.durationUs)` | Perlu perangkat |
+| Audio video + audio tambahan, volume per klip | Sequence audio terpisah; volume via `ChannelMixingAudioProcessor` bila != 1 | Perlu perangkat (A/V sync tidak diukur di 1.3) |
+| Sinkron playhead-preview | Controller: polling 100 ms saat memutar; seek ke pemutar; klip dipilih memindah playhead | `PreviewControllerTest` (engine palsu) |
+| Split/trim/reorder/impor/undo tercermin | `PreviewPlan.structureChanged` memicu rebuild (debounce 300 ms); posisi dipertahankan; rename tidak rebuild | `PreviewPlanTest`, `EditorFlowTest` |
+| Galat/loading | State `loading/ready/error/notice`; galat pertama pada CompositionPlayer berpindah otomatis ke ExoPlayer (fallback tanpa gap/audio tambahan/efek), galat kedua ditampilkan | `PreviewControllerTest` |
+| Lifecycle | Jeda di `onStop`; `release()` saat editor ditutup; engine lama dilepas saat rebuild; callback setelah release diabaikan | `PreviewControllerTest`; kebocoran memori nyata belum diukur |
+
+Keputusan: kanvas preview tetap 1280x720 (letterbox); rotasi model searah jarum jam sehingga sudut dinegasikan untuk `ScaleAndRotateTransformation`; crop dipetakan ke NDC. Rebuild menghentikan pemutaran (posisi dipertahankan).
+
+## Validasi fungsional edit
+`EditorFlowTest`: add, split, duplicate, reorder, rotate, crop, trim, delete(ripple) lewat `EditHistory`; invarian `validate()` tiap langkah; undo 9 langkah kembali ke proyek awal persis; redo kembali ke akhir; rotasi/crop/trim lolos round trip JSON. Itu membuktikan model, BUKAN tampilan atau tombol UI.
+
+## Pengujian (dipisah)
+- **Unit test JVM:** ditambah `PreviewPlanTest` (11), `PreviewControllerTest` (9), `EditorFlowTest` (2). Hasil tepat per run: lihat Actions (jumlah dan status dikutip di laporan akhir).
+- **CI:** commit 3be1975 (UI preview) lolos test, lint, assembleDebug (run 45564442537). Run untuk v0.3.0 dicatat di CHANGELOG/laporan akhir.
+- **Perangkat fisik:** **belum**.
+
+## Belum / keterbatasan
+- Fallback ExoPlayer: tanpa gap, audio tambahan, volume, rotasi/crop.
+- Crop/rotasi belum di export. Thumbnail dan waveform belum ada. Performa perangkat menengah belum diukur; seek saat memutar dan rebuild bisa terasa lambat pada banyak klip.
+- Kinerja SurfaceView di dalam Compose scroll belum diuji.
+
+## Uji perangkat yang masih diperlukan
+Preview video tampil; putar/jeda; seek menggeser frame; dua klip berurutan tanpa glitch; gambar tampil sesuai durasi; audio ikut timeline dan sinkron; volume; split/trim/reorder/undo terlihat di preview; tutup/buka editor berulang (kebocoran/crash); media gagal dimuat tidak membuat crash; suhu/memori pada media panjang.
