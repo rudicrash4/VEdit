@@ -243,3 +243,8 @@ Tiap tahap selesai hanya bila kriteria terpenuhi, lolos CI, dan (untuk perilaku 
 - Ketentuan GDD yang dijaga: portrait-first, touch target jelas, kontrol yang belum tersedia tidak ditambahkan, dan tidak mengubah perilaku domain.
 - CI pertama gagal pada compile Kotlin karena import `androidx.compose.foundation.background` terlewat di `EditorScreen.kt`; perbaikan import dibuat sebelum mengulang CI.
 - Status belum selesai sampai unit test, lint, assembleDebug, dan uji perangkat tervalidasi.
+
+
+## Unduh APK langsung dari GitHub Actions
+
+Workflow `.github/workflows/android-ci.yml` mengunggah satu file APK menggunakan `actions/upload-artifact@v7` dengan `archive: false`. Pada run yang berhasil, bagian Artifacts menampilkan file bernama `VEdit-<stage>-v<version>.apk`; unduh file itu langsung tanpa mengekstrak ZIP. Mode tanpa arsip hanya mendukung satu file per artifact. GitHub Release pada push ke `main` tetap menjadi jalur unduhan APK langsung yang persisten.
