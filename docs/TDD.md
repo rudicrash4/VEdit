@@ -390,3 +390,10 @@ Paket `preview` (Android) + `domain.PreviewPlan` (murni, teruji JVM).
 - Schema proyek 2: kunci `canvas`; migrasi 1->2 identitas (default 16:9 FIT dari deserializer). Tes memakai dokumen v1 nyata.
 - `PreviewController.update` tidak membangun ulang pemutar bila `structureChanged` salah (struktur = track, sumber, kanvas). Metrik `lastBuildMs`/`buildCount` diukur di perangkat.
 - Engine preview tetap `CompositionPlayer` (tidak diganti; belum ada bukti teknis perlu).
+
+
+## UI presentation update — PR #1
+- Implementasi tetap Jetpack Compose dalam modul `:app`; tidak menambah dependency atau mengubah arsitektur domain.
+- Warna dark studio diterapkan melalui `MaterialTheme`/`darkColorScheme`; komponen preview tetap memakai `PreviewController` dan `SurfaceView` yang sudah ada.
+- Panel hanya membungkus composable yang sudah ada. Semua callback editing, project persistence, playback, dan export dipertahankan.
+- Perubahan layout wajib melewati compile, unit test, lint, assembleDebug, lalu smoke test pada portrait phone dan landscape.

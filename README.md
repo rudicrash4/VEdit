@@ -22,3 +22,10 @@ Dalam pengembangan / belum ada: thumbnail dan waveform; verifikasi hasil export 
 
 ## Dokumen
 [GDD](docs/GDD.md) | [TDD](docs/TDD.md) | [Development](docs/DEVELOPMENT.md) | [Phase 0](docs/PHASE0_REPORT.md) | [Phase 0B](docs/PHASE0B_REPORT.md) | [Phase 1](docs/PHASE1_REPORT.md) | [Signing](docs/SIGNING.md) | [Dependency](docs/DEPENDENCIES.md) | [Changelog](CHANGELOG.md)
+
+
+## UI/UX refresh (PR #1 — in progress)
+- Arah visual: dark-first studio dengan aksen lime, hierarki preview utama, serta panel terpisah untuk kanvas, timeline, alat, dan media.
+- Beranda proyek diperbarui dengan kartu proyek dan aksi buat proyek baru.
+- Perubahan UI tidak mengubah model proyek, mesin timeline, autosave, preview engine, maupun alur export.
+- Status: perubahan masih dalam draft PR; menunggu unit test, lint, assembleDebug, dan uji perangkat sebelum dianggap selesai.

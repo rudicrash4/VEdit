@@ -121,3 +121,13 @@ Pilihan 16:9, 9:16, 1:1, 4:5 + Fit/Fill; tersimpan di proyek (schema 2); preview
 - **Unit test (JVM, CI):** `CanvasTest` (dimensi semua preset, genap, rasio, preview < export, rencana export mengikuti kanvas dan menolak 1080p, default, round trip + undo/redo, migrasi v1, perubahan kanvas memicu rebuild), `PreviewControllerTest` (+ tanpa rebuild bila struktur sama, rebuild saat kanvas berubah, metrik waktu). Hasil CI dicatat di laporan akhir.
 - **Perangkat:** v0.5.0 belum diuji.
 - **Perlu diuji di OPPO A18:** apakah preview lebih lancar (laporkan "siap X ms"); ganti rasio 9:16/1:1/4:5 dan lihat kanvas preview; export tiap rasio (cek dimensi file, tidak melar); Fit vs Fill; video landscape di kanvas portrait dan sebaliknya; gambar persegi; crop + rotasi di semua rasio; tutup/buka ulang proyek (rasio tetap); proyek lama dari v0.4.0 tetap terbuka.
+
+
+---
+# UI/UX refresh — PR #1 (25 Nov 2026)
+
+Status: **perbaikan UI sedang dikerjakan; build pertama gagal dan sedang diperbaiki. Belum dinyatakan selesai.**
+
+Cakupan: beranda proyek dark studio, palet warna, preview stage, serta pemisahan panel kanvas/timeline/tools/media pada editor. Perubahan hanya pada UI Compose; logika timeline, autosave, media import, preview controller, dan export controller tidak sengaja diubah.
+
+CI pertama: `:app:compileDebugKotlin` gagal pada `EditorScreen.kt:335:47` karena unresolved reference `background` (import `androidx.compose.foundation.background` belum ada). Import tersebut ditambahkan. CI ulang dan uji perangkat masih harus menegaskan hasilnya.

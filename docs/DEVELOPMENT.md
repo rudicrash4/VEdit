@@ -236,3 +236,10 @@ Do not claim universal device compatibility.
 | 7 | Kompatibilitas perangkat, memori/performa, regresi, signing rilis permanen, rilis | Belum; signing ditunda atas keputusan pengguna |
 Tiap tahap selesai hanya bila kriteria terpenuhi, lolos CI, dan (untuk perilaku visual/audio) terbukti di perangkat.
 - v0.5.0: rasio kanvas + optimasi preview (lihat PHASE1_REPORT). Lolos CI; belum diuji perangkat. Hasil uji v0.4.0 di OPPO A18: semua lancar, preview agak lag.
+
+
+## UI refresh — PR #1 (25 Nov 2026)
+- Scope dibatasi pada presentasi Compose: beranda, theme gelap, panel preview/editor.
+- Ketentuan GDD yang dijaga: portrait-first, touch target jelas, kontrol yang belum tersedia tidak ditambahkan, dan tidak mengubah perilaku domain.
+- CI pertama gagal pada compile Kotlin karena import `androidx.compose.foundation.background` terlewat di `EditorScreen.kt`; perbaikan import dibuat sebelum mengulang CI.
+- Status belum selesai sampai unit test, lint, assembleDebug, dan uji perangkat tervalidasi.

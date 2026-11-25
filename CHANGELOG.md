@@ -39,3 +39,10 @@
 - Preview: tidak membangun ulang pemutar bila struktur tidak berubah; metrik waktu siap (`lastBuildMs`) dan jumlah build tampil di panel.
 - UI: pemilih rasio dan Fit/Fill di bawah preview; panel preview mengikuti rasio kanvas.
 - Test: `CanvasTest` (dimensi semua preset, migrasi v1, undo/redo, round trip), tambahan `PreviewControllerTest`.
+
+
+## Unreleased — UI/UX refresh
+- Redesign awal beranda proyek dan panel editor dengan visual dark studio terinspirasi editor video mobile.
+- Rapikan preview stage dan kontrol playback tanpa mengganti preview engine.
+- Fix compile: tambahkan import `androidx.compose.foundation.background` yang terlewat pada `EditorScreen.kt`.
+- Validasi CI ulang masih berjalan; belum ada APK yang dinyatakan siap.

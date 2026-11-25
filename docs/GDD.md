@@ -346,3 +346,11 @@ The MVP is accepted only if:
 - Operation: Offline-first.
 - Source repository: `https://github.com/rudicrash4/VEdit`.
 - Build system: GitHub Actions.
+
+
+## UI/UX visual direction update — PR #1
+- Referensi pengalaman: editor video mobile yang mudah dipahami seperti CapCut; bukan menyalin aset/branding.
+- Visual: dark-first, kontras teks yang memadai, aksen lime untuk aksi utama, permukaan panel yang konsisten.
+- Prioritas layar ponsel portrait: preview sebagai fokus, timeline dan aksi editing mudah ditemukan, media import tidak menguasai seluruh layar.
+- Tombol hanya boleh ditampilkan jika terhubung ke fungsi nyata; fitur yang belum ada tetap tidak boleh disamarkan sebagai fitur aktif.
+- Perubahan ini merupakan penyegaran visual awal, bukan klaim bahwa seluruh target layout GDD (thumbnail, waveform, contextual inspector) telah selesai.
