@@ -2,7 +2,7 @@ package id.vedit.editor.preview
 
 import id.vedit.editor.domain.OutputQuality
 import android.content.Context
-import android.view.SurfaceView
+import android.widget.FrameLayout
 import androidx.annotation.OptIn
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -17,16 +17,17 @@ import id.vedit.editor.poc.Analysis
 class CompositionEngine(private val context: Context, private val cb: EngineCallbacks) : PreviewEngine {
     override val name = "CompositionPlayer"
     private var player: CompositionPlayer? = null
-    private var surface: SurfaceView? = null
+    private val surfaceHost = SurfaceHost()
     private var startUs = 0L
     private var ready = false
 
     override val isPlaying: Boolean get() = player?.isPlaying == true
     override val positionUs: Long get() = (player?.currentPosition ?: 0L) * 1000L
 
-    override fun attach(surface: SurfaceView?) {
-        this.surface = surface
-        player?.setVideoSurfaceView(surface)
+    override fun attach(host: FrameLayout?) {
+        player?.setVideoSurfaceView(null)
+        val sv = surfaceHost.attach(host)
+        player?.setVideoSurfaceView(sv)
     }
 
     override fun load(project: Project, startPositionUs: Long) {
@@ -65,7 +66,7 @@ class CompositionEngine(private val context: Context, private val cb: EngineCall
                     cb.onError("${error.errorCodeName}: ${error.message}")
                 }
             })
-            p.setVideoSurfaceView(surface)
+            p.setVideoSurfaceView(surfaceHost.view)
             p.setComposition(composition)
             p.prepare()
         } catch (t: Throwable) {
@@ -95,5 +96,8 @@ class CompositionEngine(private val context: Context, private val cb: EngineCall
         ready = false
     }
 
-    override fun release() = releasePlayer()
+    override fun release() {
+        releasePlayer()
+        surfaceHost.detach()
+    }
 }

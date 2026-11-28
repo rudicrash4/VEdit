@@ -62,3 +62,10 @@
 - Media3 dipertahankan (lihat TDD bagian 23). Audit: `docs/RUST_MIGRATION_AUDIT.md`. TDD migrasi: `docs/TDD_RUST_MIGRATION.md`.
 - Belum diuji di perangkat fisik.
 - CI v0.6.0: run 46096532420 sukses (Rust fmt/clippy/tes, tes Kotlin + differential, lint, assembleDebug, verifikasi `.so` di APK). Perbaikan: tugas cargo-ndk kini dipicu oleh `merge*JniLibFolders`.
+
+## Phase 1 v0.7.0 (Preview Engine V2)
+- Audit preview: `docs/PREVIEW_V2_AUDIT.md` (fakta vs hipotesis; bug transisi klip 1→2 BELUM direproduksi). Desain: `docs/PREVIEW_V2_DESIGN.md`.
+- Rust: `vedit-core::playback` (rencana pemutaran + geometri), API `nativePlan`/`nativeLayout`, `API_VERSION = 2`.
+- Kotlin: `preview/v2` (`TimelineSession` murni + slot ExoPlayer ping-pong, `V2Engine`, `PreviewLog`), `PlanProvider` Rust/Kotlin. `PreviewEngine.attach` kini menerima `FrameLayout`. Urutan mesin V2 → Composition → Exo, pilihan mesin di panel preview (disimpan), log + statistik dapat disalin.
+- Tes: `TimelineSessionTest` (14 skenario regresi + stall/galat/drift, jam virtual), `PlanParityTest`, `PreviewControllerTest` diperluas. CompositionPlayer tetap tersedia.
+- Belum diuji di perangkat; V2 belum terbukti lebih baik (mesin lama tidak dihapus).

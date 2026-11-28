@@ -273,3 +273,6 @@ Lihat `RUST_MIGRATION_AUDIT.md`, `BRIDGE_DECISION.md`, `TDD_RUST_MIGRATION.md`.
 - Debug native: label "Engine edit: Rust/Kotlin" di editor; alasan cadangan ditampilkan; `adb logcat` untuk `UnsatisfiedLinkError`.
 - Menambah modul/perintah: tambah fungsi di `vedit-core` + tes, tambah varian `Command` di `engine.rs`, tambah `EditOp` + `opToJson` + cabang `KotlinEngine`, perluas differential test, naikkan `API_VERSION` bila kontrak berubah tak kompatibel.
 - Status: milestone migrasi engine editing selesai di sisi kode dan CI; belum diuji perangkat.
+
+## Preview Engine V2 (v0.7.0)
+Kode: `app/src/main/java/id/vedit/editor/preview/v2/` (`Plan.kt`, `TimelineSession.kt`, `Slots.kt`, `ExoSlots.kt`, `V2Engine.kt`, `PreviewLog.kt`); Rust: `rust/vedit-core/src/playback.rs`. Tes: `preview/v2/` (slot palsu + `VClock`). Menambah skenario: bangun `Harness(project)`, `load()`, `run(ms)`, cek `violations`. Diagnostik di perangkat: panel preview → Log → Salin. Dokumen: `docs/PREVIEW_V2_AUDIT.md`, `docs/PREVIEW_V2_DESIGN.md`.

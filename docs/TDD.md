@@ -405,3 +405,6 @@ Paket `preview` (Android) + `domain.PreviewPlan` (murni, teruji JVM).
 - Persistensi tetap di Kotlin (`ProjectCodec`/`ProjectStore`): Kotlin memigrasikan dokumen ke schema terkini sebelum diberikan ke Rust; Rust menolak schema lain. Schema proyek tidak berubah (2).
 - Keputusan media: Media3 (`CompositionPlayer`, `Transformer`, efek) dipertahankan untuk preview dan export karena terbukti di perangkat pengguna dan tidak ada bukti keunggulan alternatif; Rust merencanakan, Media3 mengeksekusi. `CompositionFactory` masih memakai `PreviewPlan`/`CanvasSpec` Kotlin (paritas Rust teruji; peralihan = tahap berikut).
 - Pengujian: tes Rust (core + bridge), `DifferentialEngineTest` (40 seed x 120 operasi acak, membandingkan proyek hasil, pesan galat, undo/redo antara Rust dan Kotlin), smoke test muat pustaka host di JVM. Semua di JVM host, bukan perangkat.
+
+## 24. Addendum v0.7.0: Preview Engine V2
+Lihat `PREVIEW_V2_AUDIT.md` dan `PREVIEW_V2_DESIGN.md`. Ringkas: ExoPlayer + pengendali timeline sendiri (Rust menjadwal/menghitung geometri, Kotlin mengorkestrasi, ExoPlayer mendekode); MediaCodec langsung ditolak (kompleksitas tanpa bukti). Pengujian: 14 skenario regresi di JVM dengan slot palsu dan jam virtual (bukan bukti perilaku perangkat), paritas Rust/Kotlin, tes Rust `playback`. Verifikasi perangkat menunggu pengguna.

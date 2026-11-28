@@ -11,7 +11,8 @@ pub mod json;
 pub mod model;
 pub mod ops;
 pub mod plan;
+pub mod playback;
 pub mod time;
 
 /// Versi kontrak API bridge. Naikkan bila format perintah/hasil JSON berubah tidak kompatibel.
-pub const API_VERSION: i32 = 1;
+pub const API_VERSION: i32 = 2;

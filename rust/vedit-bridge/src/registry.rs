@@ -108,6 +108,14 @@ pub fn canvas_size(aspect: &str, fit: &str, quality: &str) -> String {
     })
 }
 
+pub fn plan(project_json: &str) -> String {
+    guarded(|| vedit_core::engine::plan_json(project_json).unwrap_or_else(|m| err("invalid_project", &m)))
+}
+
+pub fn layout(args_json: &str) -> String {
+    guarded(|| vedit_core::engine::layout_json(args_json).unwrap_or_else(|m| err("bad_argument", &m)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -162,6 +170,28 @@ mod tests {
         assert_eq!(sorted.len(), 8);
         for h in hs {
             close(h);
+        }
+    }
+
+    #[test]
+    fn plan_and_layout_api() {
+        let json = project_to_value(&Project::create("p", "x", 0)).to_json();
+        let v = parse(&plan(&json)).unwrap();
+        assert_eq!(v.get("ok").unwrap().as_bool(), Some(true));
+        assert_eq!(v.get("durationUs").unwrap().as_i64(), Some(0));
+        assert_eq!(parse(&plan("{")).unwrap().get("ok").unwrap().as_bool(), Some(false));
+        let l = parse(&layout(
+            r#"{"viewW":100,"viewH":100,"srcW":100,"srcH":100,"rotationDeg":0,"crop":null,"fit":"FIT"}"#,
+        ))
+        .unwrap();
+        assert_eq!(l.get("ok").unwrap().as_bool(), Some(true));
+        assert_eq!(l.get("m").unwrap().as_arr().unwrap().len(), 6);
+        for bad in [r#"{}"#, r#"{"viewW":0,"viewH":1,"srcW":1,"srcH":1}"#, "x"] {
+            assert_eq!(
+                parse(&layout(bad)).unwrap().get("ok").unwrap().as_bool(),
+                Some(false),
+                "{bad}"
+            );
         }
     }
 

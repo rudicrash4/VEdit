@@ -2,7 +2,7 @@ package id.vedit.editor.preview
 
 import android.content.Context
 import android.net.Uri
-import android.view.SurfaceView
+import android.widget.FrameLayout
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -23,7 +23,7 @@ import id.vedit.editor.domain.TrackType
 class ExoEngine(private val context: Context, private val cb: EngineCallbacks) : PreviewEngine {
     override val name = "ExoPlayer (cadangan)"
     private var player: ExoPlayer? = null
-    private var surface: SurfaceView? = null
+    private val surfaceHost = SurfaceHost()
     private var clips: List<Clip> = emptyList()
     private var startUs = 0L
     private var ready = false
@@ -37,13 +37,14 @@ class ExoEngine(private val context: Context, private val cb: EngineCallbacks) :
             return PreviewPlan.toTimelineUs(clips, p.currentMediaItemIndex, p.currentPosition * 1000L)
         }
 
-    override fun attach(surface: SurfaceView?) {
-        this.surface = surface
-        player?.setVideoSurfaceView(surface)
+    override fun attach(host: FrameLayout?) {
+        player?.setVideoSurfaceView(null)
+        val sv = surfaceHost.attach(host)
+        player?.setVideoSurfaceView(sv)
     }
 
     override fun load(project: Project, startPositionUs: Long) {
-        release()
+        releasePlayer()
         startUs = startPositionUs
         clips = project.tracks.firstOrNull { it.type == TrackType.VIDEO }?.clips?.sortedBy { it.startUs } ?: emptyList()
         val items = clips.mapNotNull { clip ->
@@ -84,11 +85,11 @@ class ExoEngine(private val context: Context, private val cb: EngineCallbacks) :
                     cb.onError("${error.errorCodeName}: ${error.message}")
                 }
             })
-            p.setVideoSurfaceView(surface)
+            p.setVideoSurfaceView(surfaceHost.view)
             p.setMediaItems(items)
             p.prepare()
         } catch (t: Throwable) {
-            release()
+            releasePlayer()
             cb.onError("Gagal menyiapkan ExoPlayer: ${t::class.java.simpleName}: ${t.message}")
         }
     }
@@ -108,6 +109,11 @@ class ExoEngine(private val context: Context, private val cb: EngineCallbacks) :
     }
 
     override fun release() {
+        releasePlayer()
+        surfaceHost.detach()
+    }
+
+    private fun releasePlayer() {
         player?.let {
             runCatching { it.setVideoSurfaceView(null) }
             runCatching { it.release() }

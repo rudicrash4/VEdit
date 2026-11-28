@@ -1,12 +1,16 @@
 package id.vedit.editor.preview
 
 import android.content.Context
-import android.view.SurfaceView
+import android.content.SharedPreferences
+import android.widget.FrameLayout
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import id.vedit.editor.domain.PreviewPlan
 import id.vedit.editor.domain.Project
+
+/** Mesin preview. Urutan cadangan: V2 -> COMPOSITION -> EXO. */
+enum class EngineKind(val label: String) { V2("V2"), COMPOSITION("Composition"), EXO("Exo") }
 
 data class PreviewUiState(
     val hasContent: Boolean = false,
@@ -14,6 +18,8 @@ data class PreviewUiState(
     val ready: Boolean = false,
     val isPlaying: Boolean = false,
     val engineName: String = "",
+    val preferred: EngineKind = EngineKind.COMPOSITION,
+    val stats: String = "",
     val notice: String = "",
     val error: String = "",
     /** Waktu (ms) dari memulai pembangunan hingga siap, terukur di perangkat; -1 = belum ada. */
@@ -28,24 +34,53 @@ data class PreviewUiState(
 class PreviewController(
     private val clockMs: () -> Long = { System.nanoTime() / 1_000_000L },
     /** (callbacks, pakaiCadangan) -> mesin. Diinjeksi agar controller bisa diuji tanpa perangkat. */
-    private val factory: (EngineCallbacks, Boolean) -> PreviewEngine,
+    private val preferred0: EngineKind = EngineKind.COMPOSITION,
+    private val onPreferredChanged: (EngineKind) -> Unit = {},
+    private val factory: (EngineCallbacks, EngineKind) -> PreviewEngine,
 ) : EngineCallbacks {
-    var ui by mutableStateOf(PreviewUiState())
+    var ui by mutableStateOf(PreviewUiState(preferred = preferred0))
         private set
 
+    private var preferred = preferred0
+    private var current = preferred0
+
     private var engine: PreviewEngine? = null
-    private var surface: SurfaceView? = null
+    private var host: FrameLayout? = null
     private var project: Project? = null
-    private var usingFallback = false
     private var wantedPositionUs = 0L
     private var released = false
     private var buildStartMs = 0L
 
     val positionUs: Long get() = engine?.positionUs ?: wantedPositionUs
 
-    fun attachSurface(view: SurfaceView) {
-        surface = view
+    fun attachHost(view: FrameLayout) {
+        host = view
         engine?.attach(view)
+    }
+
+    fun detachHost(view: FrameLayout) {
+        if (host === view) {
+            engine?.attach(null)
+            host = null
+        }
+    }
+
+    /** Pilihan pengguna (disimpan lewat [onPreferredChanged]); membangun ulang preview dengan mesin itu. */
+    fun setPreferred(kind: EngineKind) {
+        if (released) return
+        preferred = kind
+        current = kind
+        onPreferredChanged(kind)
+        ui = ui.copy(preferred = kind, notice = "")
+        if (project != null && PreviewPlan.hasPlayableContent(project!!)) start()
+    }
+
+    fun cycleEngine() = setPreferred(EngineKind.values()[(preferred.ordinal + 1) % EngineKind.values().size])
+
+    /** Cuplikan statistik mesin aktif untuk panel diagnostik. */
+    fun refreshStats() {
+        val st = engine?.stats ?: ""
+        if (st != ui.stats) ui = ui.copy(stats = st)
     }
 
     /** Dipanggil saat struktur proyek berubah. Playback dihentikan; posisi dipertahankan. */
@@ -71,9 +106,9 @@ class PreviewController(
     private fun start() {
         val p = project ?: return
         engine?.release()
-        val e = factory(this, usingFallback)
+        val e = factory(this, current)
         engine = e
-        e.attach(surface)
+        e.attach(host)
         buildStartMs = clockMs()
         ui = ui.copy(hasContent = true, loading = true, ready = false, isPlaying = false, engineName = e.name, error = "", buildCount = ui.buildCount + 1)
         e.load(p, wantedPositionUs)
@@ -101,7 +136,7 @@ class PreviewController(
         released = true
         engine?.release()
         engine = null
-        surface = null
+        host = null
     }
 
     // --- EngineCallbacks (main thread)
@@ -120,9 +155,11 @@ class PreviewController(
 
     override fun onError(message: String) {
         if (released) return
-        if (!usingFallback && project?.tracks?.any { it.clips.isNotEmpty() } == true) {
-            usingFallback = true
-            ui = ui.copy(notice = "CompositionPlayer gagal ($message). Memakai ExoPlayer: hanya track video berurutan, tanpa celah/audio tambahan/efek.")
+        val next = EngineKind.values().firstOrNull { it.ordinal > current.ordinal }
+        if (next != null && project?.tracks?.any { it.clips.isNotEmpty() } == true) {
+            val note = if (next == EngineKind.EXO) " Hanya track video berurutan, tanpa celah/audio tambahan/efek." else ""
+            ui = ui.copy(notice = "${current.label} gagal ($message). Beralih ke ${next.label}.$note")
+            current = next
             start()
         } else {
             ui = ui.copy(loading = false, ready = false, isPlaying = false, error = message)
@@ -130,5 +167,21 @@ class PreviewController(
     }
 }
 
-fun defaultPreviewController(context: Context): PreviewController =
-    PreviewController { cb, fallback -> if (fallback) ExoEngine(context, cb) else CompositionEngine(context, cb) }
+private const val PREFS = "vedit_prefs"
+private const val KEY_ENGINE = "preview_engine"
+
+/** Mesin awal = V2 (pilihan terakhir pengguna diingat). V2 BELUM terbukti lebih baik di perangkat; lihat docs/PREVIEW_V2_*.md. */
+fun defaultPreviewController(context: Context): PreviewController {
+    val prefs: SharedPreferences = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    val saved = runCatching { EngineKind.valueOf(prefs.getString(KEY_ENGINE, null) ?: "") }.getOrDefault(EngineKind.V2)
+    return PreviewController(
+        preferred0 = saved,
+        onPreferredChanged = { prefs.edit().putString(KEY_ENGINE, it.name).apply() },
+    ) { cb, kind ->
+        when (kind) {
+            EngineKind.V2 -> id.vedit.editor.preview.v2.V2Engine(context, cb)
+            EngineKind.COMPOSITION -> CompositionEngine(context, cb)
+            EngineKind.EXO -> ExoEngine(context, cb)
+        }
+    }
+}

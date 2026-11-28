@@ -1,6 +1,6 @@
 package id.vedit.editor.preview
 
-import android.view.SurfaceView
+import android.widget.FrameLayout
 import id.vedit.editor.domain.AspectPreset
 import id.vedit.editor.domain.CanvasSettings
 import id.vedit.editor.domain.Clip
@@ -26,7 +26,7 @@ class PreviewControllerTest {
         var released = false
         val seeks = ArrayList<Long>()
         var played = 0
-        override fun attach(surface: SurfaceView?) {}
+        override fun attach(host: FrameLayout?) {}
         override fun load(project: Project, startPositionUs: Long) { loaded = project to startPositionUs }
         override fun seekTo(us: Long) { seeks += us; positionUs = us }
         override fun play() { played++; isPlaying = true }
@@ -35,7 +35,8 @@ class PreviewControllerTest {
     }
 
     private val engines = ArrayList<FakeEngine>()
-    private fun controller() = PreviewController { cb, fb -> FakeEngine(cb, fb).also { engines += it } }
+    private val kinds = ArrayList<EngineKind>()
+    private fun controller() = PreviewController { cb, fb -> FakeEngine(cb, fb == EngineKind.EXO).also { engines += it } }
 
     private val src = MediaSource("m", "content://x", MediaType.VIDEO, "x.mp4", 20 * s, 1280, 720, true)
     private fun project(withClip: Boolean = true) = Project.create("p", "t", 0).copy(
@@ -97,6 +98,33 @@ class PreviewControllerTest {
     }
 
     @Test
+    fun v2FallsBackToCompositionThenExo() {
+        val c = PreviewController(preferred = EngineKind.V2) { cb, k -> FakeEngine(cb, k == EngineKind.EXO).also { engines += it; kinds += k } }
+        c.update(project(), 0)
+        assertEquals(listOf(EngineKind.V2), kinds)
+        engines[0].cb.onError("v2 mati")
+        assertEquals(listOf(EngineKind.V2, EngineKind.COMPOSITION), kinds)
+        engines[1].cb.onError("comp mati")
+        assertEquals(listOf(EngineKind.V2, EngineKind.COMPOSITION, EngineKind.EXO), kinds)
+        engines[2].cb.onError("exo mati")
+        assertEquals(3, engines.size)
+        assertEquals("exo mati", c.ui.error)
+    }
+
+    @Test
+    fun changingPreferredEngineRebuildsAndNotifies() {
+        var saved: EngineKind? = null
+        val c = PreviewController(preferred = EngineKind.COMPOSITION, onPreferredChanged = { saved = it }) { cb, k -> FakeEngine(cb, k == EngineKind.EXO).also { engines += it; kinds += k } }
+        c.update(project(), 2 * s)
+        c.setPreferred(EngineKind.V2)
+        assertEquals(EngineKind.V2, saved)
+        assertEquals(listOf(EngineKind.COMPOSITION, EngineKind.V2), kinds)
+        assertTrue(engines[0].released)
+        assertEquals(2 * s, engines[1].loaded!!.second)
+        assertEquals("", c.ui.notice)
+    }
+
+    @Test
     fun rebuildReleasesPreviousEngine() {
         val c = controller()
         c.update(project(), 0)
@@ -121,7 +149,7 @@ class PreviewControllerTest {
     @Test
     fun canvasChangeTriggersRebuildAndBuildTimeIsMeasured() {
         var now = 1000L
-        val c = PreviewController({ now }) { cb, fb -> FakeEngine(cb, fb).also { engines += it } }
+        val c = PreviewController({ now }) { cb, fb -> FakeEngine(cb, fb == EngineKind.EXO).also { engines += it } }
         c.update(project(), 0)
         now = 1450L
         engines[0].cb.onReady()

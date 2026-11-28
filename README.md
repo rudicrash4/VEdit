@@ -32,3 +32,6 @@ Dalam pengembangan / belum ada: thumbnail dan waveform; verifikasi hasil export 
 - **EditorScreen:** susunan panel kanvas/preview, timeline, tools, dan media dirapikan; layout tetap adaptif untuk portrait dan layar lebar.
 - Perubahan hanya pada presentasi UI Compose (serta import `background` yang diperlukan untuk kompilasi). Model proyek, mesin timeline, autosave, impor media, preview engine/controller, dan export controller dipertahankan.
 - CI PR sebelumnya (#33) lulus; versi 0.5.1 menunggu CI ulang setelah version bump. Uji fisik UI versi ini masih diperlukan. Thumbnail dan waveform tetap belum tersedia.
+
+## Preview Engine V2 (v0.7.0, eksperimental)
+Mesin preview baru (ExoPlayer + pengendali timeline; jadwal & geometri dari core Rust) untuk mengatasi gambar membeku saat transisi klip pada CompositionPlayer. **Belum diuji di perangkat dan belum terbukti lebih baik.** Pilih mesin di panel preview (V2 / Composition / Exo). Lihat `docs/PREVIEW_V2_AUDIT.md` dan `docs/PREVIEW_V2_DESIGN.md`.

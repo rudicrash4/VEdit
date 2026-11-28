@@ -1,6 +1,6 @@
 package id.vedit.editor.preview
 
-import android.view.SurfaceView
+import android.widget.FrameLayout
 import id.vedit.editor.domain.Project
 
 interface EngineCallbacks {
@@ -15,7 +15,11 @@ interface PreviewEngine {
     val name: String
     val isPlaying: Boolean
     val positionUs: Long
-    fun attach(surface: SurfaceView?)
+    /** Teks diagnostik singkat (kosong bila tidak ada). */
+    val stats: String get() = ""
+
+    /** Memasang/melepas wadah tampilan. Mesin membuat view-nya sendiri di dalam [host]. */
+    fun attach(host: FrameLayout?)
     /** Memuat komposisi dari proyek (asinkron); `onReady` dipanggil saat siap, lalu posisi awal diterapkan. */
     fun load(project: Project, startPositionUs: Long)
     fun seekTo(us: Long)

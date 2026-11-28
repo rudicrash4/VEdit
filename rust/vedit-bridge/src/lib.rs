@@ -100,3 +100,21 @@ pub extern "system" fn Java_id_vedit_editor_engine_NativeBridge_nativeCanvasSize
     };
     out(&mut env, r)
 }
+
+#[no_mangle]
+pub extern "system" fn Java_id_vedit_editor_engine_NativeBridge_nativePlan(
+    mut env: JNIEnv,
+    _c: JClass,
+    json: JString,
+) -> jstring {
+    with_str(&mut env, &json, registry::plan)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_id_vedit_editor_engine_NativeBridge_nativeLayout(
+    mut env: JNIEnv,
+    _c: JClass,
+    json: JString,
+) -> jstring {
+    with_str(&mut env, &json, registry::layout)
+}

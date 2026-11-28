@@ -462,3 +462,83 @@ impl Engine {
         self.snapshot(None)
     }
 }
+
+// ------------------------------------------------------------------ rencana pemutaran (Preview V2)
+
+use crate::playback::{self, Segment};
+
+fn crop_to_value(c: Option<Crop>) -> Value {
+    match c {
+        None => Value::Null,
+        Some(k) => kv(vec![
+            ("left", Value::f32(k.left)),
+            ("top", Value::f32(k.top)),
+            ("right", Value::f32(k.right)),
+            ("bottom", Value::f32(k.bottom)),
+        ]),
+    }
+}
+
+fn segment_to_value(s: &Segment) -> Value {
+    kv(vec![
+        ("kind", Value::str(s.kind.name())),
+        ("clipId", Value::str(&s.clip_id)),
+        ("sourceId", Value::str(&s.source_id)),
+        ("startUs", Value::int(s.start_us)),
+        ("endUs", Value::int(s.end_us)),
+        ("srcInUs", Value::int(s.src_in_us)),
+        ("srcOutUs", Value::int(s.src_out_us)),
+        ("speed", Value::f32(s.speed)),
+        ("volume", Value::f32(s.volume)),
+        ("rotationDeg", Value::int(s.rotation_deg as i64)),
+        ("crop", crop_to_value(s.crop)),
+    ])
+}
+
+/// Rencana pemutaran dari dokumen proyek (schema terkini). Hasil: amplop JSON.
+pub fn plan_json(project_json: &str) -> Result<String, String> {
+    let p = project_from_value(&parse(project_json)?)?;
+    let plan = playback::build_plan(&p);
+    Ok(kv(vec![
+        ("ok", Value::Bool(true)),
+        ("video", Value::Arr(plan.video.iter().map(segment_to_value).collect())),
+        ("audio", Value::Arr(plan.audio.iter().map(segment_to_value).collect())),
+        ("durationUs", Value::int(plan.duration_us)),
+    ])
+    .to_json())
+}
+
+fn f_f64(v: &Value, k: &str) -> Result<f64, String> {
+    field(v, k)?.as_f64().ok_or_else(|| format!("Field '{k}' harus angka"))
+}
+
+/// Geometri penempatan frame. Argumen: {viewW,viewH,srcW,srcH,rotationDeg,crop|null,fit}.
+pub fn layout_json(args_json: &str) -> Result<String, String> {
+    let v = parse(args_json)?;
+    let (vw, vh, sw, sh) = (
+        f_f64(&v, "viewW")?,
+        f_f64(&v, "viewH")?,
+        f_f64(&v, "srcW")?,
+        f_f64(&v, "srcH")?,
+    );
+    if !(vw > 0.0 && vh > 0.0 && sw > 0.0 && sh > 0.0) {
+        return Err("Ukuran view/sumber harus positif".into());
+    }
+    let rot = f_i64_or(&v, "rotationDeg", 0)? as i32;
+    let crop = match v.get("crop") {
+        None => None,
+        Some(c) => crop_from_value(c)?,
+    };
+    let fit = if v.get("fit").and_then(|x| x.as_str()) == Some("FILL") {
+        FitMode::Fill
+    } else {
+        FitMode::Fit
+    };
+    let l = playback::layout(vw, vh, sw, sh, rot, crop, fit);
+    Ok(kv(vec![
+        ("ok", Value::Bool(true)),
+        ("m", Value::Arr(l.m.iter().map(|x| Value::f64(*x)).collect())),
+        ("clip", Value::Arr(l.clip.iter().map(|x| Value::f64(*x)).collect())),
+    ])
+    .to_json())
+}

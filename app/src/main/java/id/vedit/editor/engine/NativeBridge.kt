@@ -7,7 +7,7 @@ package id.vedit.editor.engine
  */
 object NativeBridge {
     /** Versi kontrak yang dipahami kode Kotlin ini; harus sama dengan `vedit_core::API_VERSION`. */
-    const val EXPECTED_API = 1
+    const val EXPECTED_API = 2
 
     var loadError: String? = null
         private set
@@ -35,5 +35,7 @@ object NativeBridge {
     @JvmStatic external fun nativeRedo(handle: Long): String
     @JvmStatic external fun nativeSnapshot(handle: Long): String
     @JvmStatic external fun nativeClose(handle: Long)
+    @JvmStatic external fun nativePlan(projectJson: String): String
+    @JvmStatic external fun nativeLayout(argsJson: String): String
     @JvmStatic external fun nativeCanvasSize(aspect: String, fit: String, quality: String): String
 }

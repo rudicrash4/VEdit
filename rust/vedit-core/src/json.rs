@@ -26,6 +26,13 @@ impl Value {
             Value::Null
         }
     }
+    pub fn f64(f: f64) -> Value {
+        if f.is_finite() {
+            Value::Num(format!("{:?}", f))
+        } else {
+            Value::Null
+        }
+    }
     pub fn str(s: &str) -> Value {
         Value::Str(s.to_string())
     }
@@ -52,6 +59,13 @@ impl Value {
     pub fn as_f32(&self) -> Option<f32> {
         if let Value::Num(n) = self {
             n.parse::<f32>().ok()
+        } else {
+            None
+        }
+    }
+    pub fn as_f64(&self) -> Option<f64> {
+        if let Value::Num(n) = self {
+            n.parse::<f64>().ok().filter(|x| x.is_finite())
         } else {
             None
         }

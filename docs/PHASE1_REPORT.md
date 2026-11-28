@@ -164,3 +164,8 @@ Setelah PR digabung ke `main`, workflow menjalankan build untuk push `main`; jik
 - Tes Kotlin (JVM): lolos termasuk `DifferentialEngineTest` dengan pustaka host wajib termuat (`VEDIT_REQUIRE_NATIVE=1`; tes gagal bila tidak termuat, tidak dilewati diam-diam). Lint dan `assembleDebug` lolos.
 - APK: `VEdit-Phase1-v0.6.0.apk` memuat `lib/arm64-v8a/libvedit_bridge.so` dan `lib/armeabi-v7a/libvedit_bridge.so` (diverifikasi CI); ukuran 14.409.534 byte vs 13.524.640 byte (v0.5.1), selisih sekitar 0,9 MB.
 - Belum: uji muat pustaka di perangkat/emulator Android (CI hanya memuat pustaka host di JVM), pengukuran kinerja, uji perangkat fisik.
+
+# v0.7.0: Preview Engine V2
+- Dibuat sebagai mesin terpisah dari CompositionPlayer (tetap ada, dapat dipilih). Fallback otomatis V2 → Composition → Exo.
+- **Hasil lokal (bukan perangkat):** Rust `vedit-core` 17 tes unit + 13 integrasi lulus, clippy bersih. Tes Kotlin (TimelineSessionTest 21, PlanParityTest 4, PreviewControllerTest 13) dan CI dicatat di bawah setelah run.
+- **Belum teruji perangkat:** transisi klip 1→2, kehalusan audio, mulai dari klip 2, gambar/celah, seek lintas batas, kecepatan, volume, audio tambahan, Fit/Fill, crop/rotasi, rasio kanvas, alpha 0.01 pada TextureView, dua dekoder serentak. Perbandingan Composition vs V2 menunggu data pengguna.
