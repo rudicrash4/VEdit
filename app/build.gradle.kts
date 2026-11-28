@@ -91,7 +91,12 @@ android {
         compose = true
         buildConfig = true
     }
-    sourceSets.getByName("main").jniLibs.srcDir(files(rustJniDir).builtBy(buildRustAndroid))
+    sourceSets.getByName("main").jniLibs.srcDir(rustJniDir)
+}
+
+// AGP menjatuhkan builtBy dari srcDir, jadi dependensi dipasang eksplisit pada tugas penggabung jniLibs.
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders") }.configureEach {
+    dependsOn(buildRustAndroid)
 }
 
 tasks.withType<Test>().configureEach {
