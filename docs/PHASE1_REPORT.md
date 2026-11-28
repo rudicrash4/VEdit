@@ -169,3 +169,7 @@ Setelah PR digabung ke `main`, workflow menjalankan build untuk push `main`; jik
 - Dibuat sebagai mesin terpisah dari CompositionPlayer (tetap ada, dapat dipilih). Fallback otomatis V2 → Composition → Exo.
 - **Hasil lokal (bukan perangkat):** Rust `vedit-core` 17 tes unit + 13 integrasi lulus, clippy bersih. Tes Kotlin (TimelineSessionTest 21, PlanParityTest 4, PreviewControllerTest 13) dan CI dicatat di bawah setelah run.
 - **Belum teruji perangkat:** transisi klip 1→2, kehalusan audio, mulai dari klip 2, gambar/celah, seek lintas batas, kecepatan, volume, audio tambahan, Fit/Fill, crop/rotasi, rasio kanvas, alpha 0.01 pada TextureView, dua dekoder serentak. Perbandingan Composition vs V2 menunggu data pengguna.
+
+## Hasil CI v0.7.0 (bukan uji perangkat)
+- Run 46147087026 sukses (commit 259e944): Rust fmt/clippy/tes, tes Kotlin (TimelineSessionTest, PlanParityTest, PreviewControllerTest), lint, assembleDebug, verifikasi `.so` di APK. Rilis `build-57`, aset `VEdit-Phase1-v0.7.0.apk`.
+- Run sebelumnya gagal 2× karena kesalahan saya sendiri (nama parameter konstruktor; ekspektasi celah di tes paritas) — sudah diperbaiki.

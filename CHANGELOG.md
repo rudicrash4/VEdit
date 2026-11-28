@@ -69,3 +69,4 @@
 - Kotlin: `preview/v2` (`TimelineSession` murni + slot ExoPlayer ping-pong, `V2Engine`, `PreviewLog`), `PlanProvider` Rust/Kotlin. `PreviewEngine.attach` kini menerima `FrameLayout`. Urutan mesin V2 → Composition → Exo, pilihan mesin di panel preview (disimpan), log + statistik dapat disalin.
 - Tes: `TimelineSessionTest` (14 skenario regresi + stall/galat/drift, jam virtual), `PlanParityTest`, `PreviewControllerTest` diperluas. CompositionPlayer tetap tersedia.
 - Belum diuji di perangkat; V2 belum terbukti lebih baik (mesin lama tidak dihapus).
+- CI v0.7.0: run 46147087026 sukses; rilis `build-57` (`VEdit-Phase1-v0.7.0.apk`). Belum diuji perangkat.
