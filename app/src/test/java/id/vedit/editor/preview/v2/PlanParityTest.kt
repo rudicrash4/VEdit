@@ -19,7 +19,7 @@ class PlanParityTest {
 
     @Test fun kotlinMemberiGapDanPemetaan() {
         val p = KotlinPlanProvider.plan(projects[1])
-        assertEquals(listOf(SegKind.GAP, SegKind.VIDEO, SegKind.IMAGE), p.video.map { it.kind })
+        assertEquals(listOf(SegKind.GAP, SegKind.VIDEO, SegKind.GAP, SegKind.IMAGE), p.video.map { it.kind })
         assertEquals(listOf(SegKind.GAP, SegKind.AUDIO), p.audio.map { it.kind })
         val seg = p.video[1]
         assertEquals(seg.srcInUs + 1_000_000, seg.sourcePosUs(seg.startUs + 500_000))
