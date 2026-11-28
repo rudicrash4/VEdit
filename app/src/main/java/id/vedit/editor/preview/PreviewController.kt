@@ -34,15 +34,15 @@ data class PreviewUiState(
 class PreviewController(
     private val clockMs: () -> Long = { System.nanoTime() / 1_000_000L },
     /** (callbacks, pakaiCadangan) -> mesin. Diinjeksi agar controller bisa diuji tanpa perangkat. */
-    private val preferred0: EngineKind = EngineKind.COMPOSITION,
+    preferred: EngineKind = EngineKind.COMPOSITION,
     private val onPreferredChanged: (EngineKind) -> Unit = {},
     private val factory: (EngineCallbacks, EngineKind) -> PreviewEngine,
 ) : EngineCallbacks {
-    var ui by mutableStateOf(PreviewUiState(preferred = preferred0))
+    var ui by mutableStateOf(PreviewUiState(preferred = preferred))
         private set
 
-    private var preferred = preferred0
-    private var current = preferred0
+    private var preferredKind = preferred
+    private var current = preferred
 
     private var engine: PreviewEngine? = null
     private var host: FrameLayout? = null
@@ -68,14 +68,14 @@ class PreviewController(
     /** Pilihan pengguna (disimpan lewat [onPreferredChanged]); membangun ulang preview dengan mesin itu. */
     fun setPreferred(kind: EngineKind) {
         if (released) return
-        preferred = kind
+        preferredKind = kind
         current = kind
         onPreferredChanged(kind)
         ui = ui.copy(preferred = kind, notice = "")
         if (project != null && PreviewPlan.hasPlayableContent(project!!)) start()
     }
 
-    fun cycleEngine() = setPreferred(EngineKind.values()[(preferred.ordinal + 1) % EngineKind.values().size])
+    fun cycleEngine() = setPreferred(EngineKind.values()[(preferredKind.ordinal + 1) % EngineKind.values().size])
 
     /** Cuplikan statistik mesin aktif untuk panel diagnostik. */
     fun refreshStats() {
@@ -175,7 +175,7 @@ fun defaultPreviewController(context: Context): PreviewController {
     val prefs: SharedPreferences = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     val saved = runCatching { EngineKind.valueOf(prefs.getString(KEY_ENGINE, null) ?: "") }.getOrDefault(EngineKind.V2)
     return PreviewController(
-        preferred0 = saved,
+        preferred = saved,
         onPreferredChanged = { prefs.edit().putString(KEY_ENGINE, it.name).apply() },
     ) { cb, kind ->
         when (kind) {
