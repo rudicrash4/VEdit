@@ -61,3 +61,4 @@
 - Test: `DifferentialEngineTest` (Rust vs Kotlin, urutan operasi acak).
 - Media3 dipertahankan (lihat TDD bagian 23). Audit: `docs/RUST_MIGRATION_AUDIT.md`. TDD migrasi: `docs/TDD_RUST_MIGRATION.md`.
 - Belum diuji di perangkat fisik.
+- CI v0.6.0: run 46096532420 sukses (Rust fmt/clippy/tes, tes Kotlin + differential, lint, assembleDebug, verifikasi `.so` di APK). Perbaikan: tugas cargo-ndk kini dipicu oleh `merge*JniLibFolders`.

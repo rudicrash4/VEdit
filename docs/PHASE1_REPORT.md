@@ -157,3 +157,10 @@ Setelah PR digabung ke `main`, workflow menjalankan build untuk push `main`; jik
 - **Hasil uji:** unit/CI dicatat di CHANGELOG dan laporan akhir; **perangkat fisik: belum**. Tidak ada angka kinerja Rust vs Kotlin yang diukur.
 - **Keterbatasan:** UniFFI tidak diprototipekan (lihat BRIDGE_DECISION); preview/export masih Media3 dengan rencana dari Kotlin; ABI arm64-v8a + armeabi-v7a saja; schema proyek tidak berubah.
 - **Uji perangkat diperlukan:** aplikasi terbuka (pustaka native termuat; label "Engine edit: Rust"), buka proyek lama dari v0.5.x, semua edit (split/trim/hapus/duplikat/geser/rotasi/crop/kanvas), undo/redo berulang, autosave + buka ulang, preview, export tiap rasio.
+
+## Hasil CI v0.6.0 (dicatat setelah run; bukan uji perangkat)
+- Run `46096532420` (commit `198fb49`): sukses. Run sebelumnya `46096240322` (commit `11f003f`) GAGAL pada langkah verifikasi APK: `libvedit_bridge.so` tidak masuk APK karena tugas `buildRustAndroid` tidak terpicu (AGP mengabaikan `builtBy` pada `srcDir`); diperbaiki dengan dependensi eksplisit pada tugas `merge*JniLibFolders`. Langkah verifikasi CI-lah yang menangkap ini.
+- Tes Rust: `vedit-core` 8 unit + 13 integrasi lolos; `vedit-bridge` 5 lolos; `cargo fmt --check` dan `cargo clippy -D warnings` lolos.
+- Tes Kotlin (JVM): lolos termasuk `DifferentialEngineTest` dengan pustaka host wajib termuat (`VEDIT_REQUIRE_NATIVE=1`; tes gagal bila tidak termuat, tidak dilewati diam-diam). Lint dan `assembleDebug` lolos.
+- APK: `VEdit-Phase1-v0.6.0.apk` memuat `lib/arm64-v8a/libvedit_bridge.so` dan `lib/armeabi-v7a/libvedit_bridge.so` (diverifikasi CI); ukuran 14.409.534 byte vs 13.524.640 byte (v0.5.1), selisih sekitar 0,9 MB.
+- Belum: uji muat pustaka di perangkat/emulator Android (CI hanya memuat pustaka host di JVM), pengukuran kinerja, uji perangkat fisik.
