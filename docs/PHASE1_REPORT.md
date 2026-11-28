@@ -150,3 +150,10 @@ Model/schema proyek, timeline engine dan undo/redo, autosave, media import, prev
 
 ## Distribusi
 Setelah PR digabung ke `main`, workflow menjalankan build untuk push `main`; jika seluruh langkah sukses, GitHub Release `build-<nomor-run>` dibuat dengan aset `VEdit-Phase1-v0.5.1.apk`. PR build tidak menerbitkan Release. Signing masih mengikuti konfigurasi `SIGNING.md`; bila secret signing permanen tidak tersedia, APK memakai debug key sementara.
+
+---
+# v0.6.0: migrasi Hybrid Rust Engine (milestone 1)
+- **Sudah:** core Rust + bridge JNI + `EditorEngine` terpasang di editor; Rust jalur utama bila pustaka termuat. Perilaku edit tidak berubah (diverifikasi differential test, bukan perangkat).
+- **Hasil uji:** unit/CI dicatat di CHANGELOG dan laporan akhir; **perangkat fisik: belum**. Tidak ada angka kinerja Rust vs Kotlin yang diukur.
+- **Keterbatasan:** UniFFI tidak diprototipekan (lihat BRIDGE_DECISION); preview/export masih Media3 dengan rencana dari Kotlin; ABI arm64-v8a + armeabi-v7a saja; schema proyek tidak berubah.
+- **Uji perangkat diperlukan:** aplikasi terbuka (pustaka native termuat; label "Engine edit: Rust"), buka proyek lama dari v0.5.x, semua edit (split/trim/hapus/duplikat/geser/rotasi/crop/kanvas), undo/redo berulang, autosave + buka ulang, preview, export tiap rasio.

@@ -1,0 +1,23 @@
+[package]
+name = "vedit-bridge"
+version = "0.1.0"
+edition = "2021"
+description = "JNI bridge exposing vedit-core to Kotlin through a small, versioned JSON command API."
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "vedit_bridge"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+vedit-core = { path = "../vedit-core" }
+jni = "0.21"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+# panic harus "unwind" agar catch_unwind di batas JNI dapat mengubah panic menjadi galat (bukan crash proses).
+panic = "unwind"

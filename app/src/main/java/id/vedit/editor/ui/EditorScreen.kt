@@ -55,10 +55,10 @@ import id.vedit.editor.domain.Crop
 import id.vedit.editor.domain.ExportPlan
 import id.vedit.editor.domain.FitMode
 import id.vedit.editor.domain.Edit
-import id.vedit.editor.domain.EditHistory
+import id.vedit.editor.engine.EditOp
+import id.vedit.editor.engine.EngineFactory
 import id.vedit.editor.domain.MediaType
 import id.vedit.editor.domain.Project
-import id.vedit.editor.domain.TimelineEngine
 import id.vedit.editor.domain.US_PER_SECOND
 import id.vedit.editor.domain.formatTime
 import id.vedit.editor.domain.PreviewPlan
@@ -88,8 +88,11 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
         return
     }
 
-    val history = remember(projectId) { EditHistory(first.project) }
-    var project by remember(projectId) { mutableStateOf(history.current) }
+    // Engine edit = pemilik tunggal state proyek (Rust bila pustaka native termuat, Kotlin sebagai cadangan).
+    val created = remember(projectId) { EngineFactory.create(first.project) }
+    val engine = created.engine
+    DisposableEffect(projectId) { onDispose { engine.close() } }
+    var project by remember(projectId) { mutableStateOf(engine.project) }
     var selectedId by remember(projectId) { mutableStateOf<String?>(null) }
     var playheadUs by remember(projectId) { mutableLongStateOf(0L) }
     var dpPerSecond by remember(projectId) { mutableFloatStateOf(60f) }
@@ -140,21 +143,19 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
         while (true) {
             delay(100)
             val playing = preview.ui.isPlaying
-            if (playing || was) playheadUs = PreviewPlan.clampPlayhead(preview.positionUs, history.current.durationUs)
+            if (playing || was) playheadUs = PreviewPlan.clampPlayhead(preview.positionUs, engine.project.durationUs)
             was = playing
         }
     }
     BackHandler { autosaver.flushNow(); onBack() }
 
-    fun commit(edit: Edit) {
-        when (edit) {
+    fun commit(op: EditOp) {
+        when (val edit = engine.apply(op, System.currentTimeMillis())) {
             is Edit.Ok -> {
-                val stamped = edit.project.copy(modifiedAtMs = System.currentTimeMillis())
-                history.apply(stamped)
-                project = history.current
+                project = engine.project
                 selectedId = edit.selectedClipId
                 message = ""
-                autosaver.onChanged(history.current)
+                autosaver.onChanged(engine.project)
             }
             is Edit.Err -> message = edit.reason
         }
@@ -170,10 +171,7 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
             main.post {
                 importing = false
                 if (r.sources.isNotEmpty()) {
-                    val next = history.current.copy(sources = history.current.sources + r.sources, modifiedAtMs = System.currentTimeMillis())
-                    history.apply(next)
-                    project = history.current
-                    autosaver.onChanged(history.current)
+                    commit(EditOp.AddSources(r.sources))
                 }
                 message = if (r.failures.isEmpty()) "${r.sources.size} media diimpor." else "Gagal: " + r.failures.joinToString("; ")
             }
@@ -193,13 +191,17 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = { autosaver.flushNow(); onBack() }) { Text("< Kembali") }
             Text(project.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 1)
-            TextButton(enabled = history.canUndo, onClick = { history.undo()?.let { project = it; selectedId = null; autosaver.onChanged(it) } }) { Text("Undo") }
-            TextButton(enabled = history.canRedo, onClick = { history.redo()?.let { project = it; selectedId = null; autosaver.onChanged(it) } }) { Text("Redo") }
+            TextButton(enabled = engine.canUndo, onClick = { engine.undo()?.let { project = it; selectedId = null; autosaver.onChanged(it) } }) { Text("Undo") }
+            TextButton(enabled = engine.canRedo, onClick = { engine.redo()?.let { project = it; selectedId = null; autosaver.onChanged(it) } }) { Text("Redo") }
             Button(
                 enabled = !exporter.isRunning && project.durationUs > 0,
-                onClick = { preview.pause(); exporter.start(history.current) },
+                onClick = { preview.pause(); exporter.start(engine.project) },
             ) { Text("Export") }
         }
+        Text(
+            "Engine edit: ${engine.name}" + (created.fallbackReason?.let { " (cadangan: $it)" } ?: ""),
+            style = MaterialTheme.typography.labelSmall,
+        )
         when (val st = exporter.state) {
             is ExportState.Running -> Row(verticalAlignment = Alignment.CenterVertically) {
                 LinearProgressIndicator(progress = { st.percent / 100f }, modifier = Modifier.weight(1f))
@@ -237,12 +239,12 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             AspectPreset.values().forEach { a ->
                 val on = project.canvas.aspect == a
-                val set = { commit(TimelineEngine.setCanvas(project, project.canvas.copy(aspect = a))) }
+                val set = { commit(EditOp.SetCanvas(project.canvas.copy(aspect = a))) }
                 if (on) Button(onClick = set) { Text(a.label) } else OutlinedButton(onClick = set) { Text(a.label) }
             }
             FitMode.values().forEach { f ->
                 val on = project.canvas.fit == f
-                val set = { commit(TimelineEngine.setCanvas(project, project.canvas.copy(fit = f))) }
+                val set = { commit(EditOp.SetCanvas(project.canvas.copy(fit = f))) }
                 val label = if (f == FitMode.FIT) "Fit" else "Fill"
                 if (on) Button(onClick = set) { Text(label) } else OutlinedButton(onClick = set) { Text(label) }
             }
@@ -274,21 +276,21 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             val id = selectedId
             val enabled = id != null && selected != null
-            Button(enabled = enabled, onClick = { commit(TimelineEngine.split(project, id!!, playheadUs, newId())) }) { Text("Split") }
-            Button(enabled = enabled, onClick = { commit(TimelineEngine.trimStart(project, id!!, playheadUs)) }) { Text("Trim awal") }
-            Button(enabled = enabled, onClick = { commit(TimelineEngine.trimEnd(project, id!!, playheadUs)) }) { Text("Trim akhir") }
-            Button(enabled = enabled, onClick = { commit(TimelineEngine.duplicate(project, id!!, newId())) }) { Text("Duplikat") }
-            Button(enabled = enabled, onClick = { commit(TimelineEngine.delete(project, id!!, ripple = false)) }) { Text("Hapus") }
-            Button(enabled = enabled, onClick = { commit(TimelineEngine.delete(project, id!!, ripple = true)) }) { Text("Hapus+rapatkan") }
+            Button(enabled = enabled, onClick = { commit(EditOp.Split(id!!, playheadUs, newId())) }) { Text("Split") }
+            Button(enabled = enabled, onClick = { commit(EditOp.TrimStart(id!!, playheadUs)) }) { Text("Trim awal") }
+            Button(enabled = enabled, onClick = { commit(EditOp.TrimEnd(id!!, playheadUs)) }) { Text("Trim akhir") }
+            Button(enabled = enabled, onClick = { commit(EditOp.Duplicate(id!!, newId())) }) { Text("Duplikat") }
+            Button(enabled = enabled, onClick = { commit(EditOp.Delete(id!!, ripple = false)) }) { Text("Hapus") }
+            Button(enabled = enabled, onClick = { commit(EditOp.Delete(id!!, ripple = true)) }) { Text("Hapus+rapatkan") }
             Button(enabled = enabled, onClick = {
                 val order = project.trackOf(id!!)!!.clips.sortedBy { it.startUs }
-                commit(TimelineEngine.reorder(project, id, order.indexOfFirst { it.id == id } - 1))
+                commit(EditOp.Reorder(id, order.indexOfFirst { it.id == id } - 1))
             }) { Text("Geser kiri") }
             Button(enabled = enabled, onClick = {
                 val order = project.trackOf(id!!)!!.clips.sortedBy { it.startUs }
-                commit(TimelineEngine.reorder(project, id, order.indexOfFirst { it.id == id } + 1))
+                commit(EditOp.Reorder(id, order.indexOfFirst { it.id == id } + 1))
             }) { Text("Geser kanan") }
-            Button(enabled = enabled, onClick = { commit(TimelineEngine.setRotation(project, id!!, selected!!.rotationDeg + 90)) }) { Text("Rotasi 90") }
+            Button(enabled = enabled, onClick = { commit(EditOp.SetRotation(id!!, selected!!.rotationDeg + 90)) }) { Text("Rotasi 90") }
             Button(
                 enabled = enabled && project.source(selected!!.sourceId)?.type != MediaType.AUDIO,
                 onClick = {
@@ -296,7 +298,7 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
                     val (_, aspect) = CROP_PRESETS[cropIndex]
                     val src = project.source(selected!!.sourceId)!!
                     val srcAspect = if (src.height > 0) src.width.toFloat() / src.height else 1f
-                    commit(TimelineEngine.setCrop(project, id!!, aspect?.let { Crop.centered(it, srcAspect) }))
+                    commit(EditOp.SetCrop(id!!, aspect?.let { Crop.centered(it, srcAspect) }))
                 },
             ) { Text("Crop: ${CROP_PRESETS[cropIndex].first}") }
         }
@@ -326,7 +328,7 @@ fun EditorScreen(store: ProjectStore, projectId: String, onBack: () -> Unit) {
                 }
                 Button(onClick = {
                     val track = if (src.type == MediaType.AUDIO) Project.AUDIO_TRACK else Project.VIDEO_TRACK
-                    commit(TimelineEngine.addClip(project, track, src.id, newId()))
+                    commit(EditOp.AddClip(track, src.id, newId()))
                 }) { Text("Ke timeline") }
             }
         }

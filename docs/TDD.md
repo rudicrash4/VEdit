@@ -397,3 +397,11 @@ Paket `preview` (Android) + `domain.PreviewPlan` (murni, teruji JVM).
 - Warna dark studio diterapkan melalui `MaterialTheme`/`darkColorScheme`; komponen preview tetap memakai `PreviewController` dan `SurfaceView` yang sudah ada.
 - Panel hanya membungkus composable yang sudah ada. Semua callback editing, project persistence, playback, dan export dipertahankan.
 - Perubahan layout wajib melewati compile, unit test, lint, assembleDebug, lalu smoke test pada portrait phone dan landscape.
+
+## 23. Addendum v0.6.0: Hybrid Rust Engine
+- Pemilik state proyek/riwayat: `EditorEngine`. Implementasi utama `RustEngine` (handle sesi native); `KotlinEngine` = cadangan otomatis dan pembanding. UI hanya memegang snapshot; semua mutasi lewat `EditorEngine.apply(EditOp, nowMs)` (tidak ada dua timeline yang berubah independen).
+- Core `vedit-core` (Rust, tanpa dependency): `model`, `ops` (port persis `TimelineEngine`, termasuk `Math.round`-setengah-naik dan teks galat), `history` (snapshot, batas 100), `canvas` (ukuran per rasio/kualitas, export 1080p ditolak), `plan` (urutan klip/celah, locate, structure_changed), `json`, `engine` (sesi + kontrak JSON).
+- Bridge JNI: lihat `BRIDGE_DECISION.md`. Pustaka `libvedit_bridge.so` (arm64-v8a, armeabi-v7a). Dimuat lewat `System.loadLibrary`; gagal = Kotlin.
+- Persistensi tetap di Kotlin (`ProjectCodec`/`ProjectStore`): Kotlin memigrasikan dokumen ke schema terkini sebelum diberikan ke Rust; Rust menolak schema lain. Schema proyek tidak berubah (2).
+- Keputusan media: Media3 (`CompositionPlayer`, `Transformer`, efek) dipertahankan untuk preview dan export karena terbukti di perangkat pengguna dan tidak ada bukti keunggulan alternatif; Rust merencanakan, Media3 mengeksekusi. `CompositionFactory` masih memakai `PreviewPlan`/`CanvasSpec` Kotlin (paritas Rust teruji; peralihan = tahap berikut).
+- Pengujian: tes Rust (core + bridge), `DifferentialEngineTest` (40 seed x 120 operasi acak, membandingkan proyek hasil, pesan galat, undo/redo antara Rust dan Kotlin), smoke test muat pustaka host di JVM. Semua di JVM host, bukan perangkat.

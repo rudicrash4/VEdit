@@ -2,7 +2,7 @@
 
 Editor video Android native (Kotlin, Jetpack Compose, AndroidX Media3). Offline-first, tanpa login/iklan/watermark.
 
-**Status: Phase 1 — versi 0.5.1 (UI/UX refresh).** Uji perangkat nyata v0.4.0 (OPPO A18 CPH2591, Android 15/API 35, laporan pengguna): impor, timeline, edit, rotasi, crop, preview (video/gambar/audio) dan export MP4 berhasil; preview terasa agak lag. **v0.5.0 (optimasi preview + rasio kanvas) lolos CI tetapi belum diuji di perangkat.**
+**Status: Phase 1 — versi 0.6.0 (milestone migrasi Hybrid Rust Engine).** Core editing (proyek, timeline, undo/redo, kanvas, perencana) ada di Rust dan menjadi jalur utama via JNI; engine Kotlin lama tetap sebagai cadangan otomatis. Preview/export tetap Media3. Lolos CI; **belum diuji di perangkat fisik**. Hasil uji pengguna terakhir (v0.4.0, OPPO A18): fitur utama dan export berhasil.
 
 ## Fitur
 Tersedia (kode ada; yang diuji perangkat: impor, timeline, layar editor v0.2.0):
@@ -19,10 +19,10 @@ Dalam pengembangan / belum ada: thumbnail dan waveform; verifikasi hasil export 
 ## Build dan unduh
 - CI (`.github/workflows/android-ci.yml`): unit test, lint, `assembleDebug`, verifikasi APK, lalu pada push sukses ke `main` membuat GitHub Release `build-<run>` berisi APK langsung `VEdit-Phase1-v0.5.1.apk`. Artifact Actions diunggah sebagai satu file APK tanpa pembungkus ZIP.
 - Unduh terbaru: https://github.com/rudicrash4/VEdit/releases/latest/download/VEdit-Phase1-v0.5.1.apk
-- Lokal: `./gradlew testDebugUnitTest lintDebug assembleDebug`.
+- Lokal: `./gradlew testDebugUnitTest lintDebug assembleDebug -Pvedit.requireNative=true` (perlu Rust + cargo-ndk + NDK; tanpa flag dan tanpa cargo, build memakai engine Kotlin). Tes Rust: `cd rust/vedit-core && cargo test`. Detail: `docs/DEVELOPMENT.md` bagian 11.
 
 ## Dokumen
-[GDD](docs/GDD.md) | [TDD](docs/TDD.md) | [Development](docs/DEVELOPMENT.md) | [Phase 0](docs/PHASE0_REPORT.md) | [Phase 0B](docs/PHASE0B_REPORT.md) | [Phase 1](docs/PHASE1_REPORT.md) | [Signing](docs/SIGNING.md) | [Dependency](docs/DEPENDENCIES.md) | [Changelog](CHANGELOG.md)
+[GDD](docs/GDD.md) | [TDD](docs/TDD.md) | [Development](docs/DEVELOPMENT.md) | [Phase 0](docs/PHASE0_REPORT.md) | [Phase 0B](docs/PHASE0B_REPORT.md) | [Phase 1](docs/PHASE1_REPORT.md) | [Signing](docs/SIGNING.md) | [Dependency](docs/DEPENDENCIES.md) | [Changelog](CHANGELOG.md) | [Audit Rust](docs/RUST_MIGRATION_AUDIT.md) | [Keputusan bridge](docs/BRIDGE_DECISION.md) | [TDD migrasi Rust](docs/TDD_RUST_MIGRATION.md)
 
 
 ## UI/UX refresh (PR #2 — v0.5.1)

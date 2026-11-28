@@ -262,3 +262,14 @@ Setiap GitHub Release harus menyebut versi, perubahan UI secara spesifik (atau m
 ## Unduh APK langsung dari GitHub Actions
 
 Workflow `.github/workflows/android-ci.yml` mengunggah satu file APK menggunakan `actions/upload-artifact@v7` dengan `archive: false`. Pada run yang berhasil, bagian Artifacts menampilkan file bernama `VEdit-<stage>-v<version>.apk`; unduh file itu langsung tanpa mengekstrak ZIP. Mode tanpa arsip hanya mendukung satu file per artifact. GitHub Release pada push ke `main` tetap menjadi jalur unduhan APK langsung yang persisten.
+
+## 11. Migrasi Rust (v0.6.0)
+Lihat `RUST_MIGRATION_AUDIT.md`, `BRIDGE_DECISION.md`, `TDD_RUST_MIGRATION.md`.
+**Prasyarat developer:** Rust stable (`rustup`), target `aarch64-linux-android` dan `armv7-linux-androideabi`, `cargo install cargo-ndk`, Android NDK (`ANDROID_NDK_HOME`), JDK 17.
+- Tes Rust: `cd rust/vedit-core && cargo test` (tanpa jaringan/dependency); `cd rust/vedit-bridge && cargo test` (butuh crate `jni`).
+- Format/lint: `cargo fmt --check && cargo clippy --all-targets -- -D warnings` di kedua crate.
+- Tes Kotlin termasuk differential: `./gradlew testDebugUnitTest -Pvedit.requireNative=true` (membangun pustaka host lewat cargo).
+- APK: `./gradlew assembleDebug -Pvedit.requireNative=true` (cargo-ndk menaruh `.so` di `app/build/rustJniLibs`). Tanpa cargo/cargo-ndk dan tanpa flag itu, build tetap jalan dan aplikasi memakai engine Kotlin.
+- Debug native: label "Engine edit: Rust/Kotlin" di editor; alasan cadangan ditampilkan; `adb logcat` untuk `UnsatisfiedLinkError`.
+- Menambah modul/perintah: tambah fungsi di `vedit-core` + tes, tambah varian `Command` di `engine.rs`, tambah `EditOp` + `opToJson` + cabang `KotlinEngine`, perluas differential test, naikkan `API_VERSION` bila kontrak berubah tak kompatibel.
+- Status: milestone migrasi engine editing selesai di sisi kode dan CI; belum diuji perangkat.

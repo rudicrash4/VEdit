@@ -1,0 +1,13 @@
+[package]
+name = "vedit-core"
+version = "0.1.0"
+edition = "2021"
+description = "VEdit editing core: project model, timeline operations, history, canvas and render planning (no external dependencies)."
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "vedit_core"
+
+[dependencies]
+# Sengaja kosong: core bebas dependency agar bisa dibuild/diuji di mana saja dan mudah diaudit.

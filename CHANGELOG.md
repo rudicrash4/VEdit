@@ -52,3 +52,12 @@
 - **Distribusi:** CI menerbitkan `VEdit-Phase1-v0.5.1.apk` sebagai aset `.apk` langsung di GitHub Releases hanya setelah workflow sukses pada push ke `main`.
 - **Validasi:** PR CI #33 lulus unit tests, lint, assembleDebug, dan verifikasi APK untuk commit sebelum version bump. CI khusus v0.5.1 harus lulus sebelum rilis. UI v0.5.1 belum diuji fisik.
 - **Batasan:** thumbnail timeline dan waveform belum diimplementasikan; penyegaran ini tidak menambahkan fitur editing baru.
+
+## Phase 1 v0.6.0 (milestone migrasi Hybrid Rust Engine)
+- Rust core `rust/vedit-core` (tanpa dependency): model proyek + validasi, operasi timeline, riwayat undo/redo, kanvas/ukuran/rencana export, perencana urutan klip, JSON kontrak. 21 tes Rust.
+- Bridge JNI `rust/vedit-bridge` (+ `NativeBridge.kt`), registri sesi, panic ditangkap. Keputusan: `docs/BRIDGE_DECISION.md`.
+- Kotlin: `EditorEngine` (`RustEngine` utama, `KotlinEngine` cadangan otomatis), `EditorScreen` memakai engine; label engine aktif di UI.
+- Gradle: tugas `buildRustHost`/`buildRustAndroid` (cargo, cargo-ndk; ABI arm64-v8a + armeabi-v7a). CI: fmt, clippy, tes Rust, `-Pvedit.requireNative=true`, verifikasi `libvedit_bridge.so` di APK.
+- Test: `DifferentialEngineTest` (Rust vs Kotlin, urutan operasi acak).
+- Media3 dipertahankan (lihat TDD bagian 23). Audit: `docs/RUST_MIGRATION_AUDIT.md`. TDD migrasi: `docs/TDD_RUST_MIGRATION.md`.
+- Belum diuji di perangkat fisik.

@@ -33,6 +33,35 @@ jobs:
       - name: Make wrapper executable
         run: chmod +x ./gradlew
 
+      # ---- Rust engine: toolchain, cargo-ndk, lalu cek format/lint/tes sebelum Gradle ----
+      - name: Set up Rust (stable + target Android)
+        run: |
+          rustup toolchain install stable --profile minimal -c rustfmt -c clippy
+          rustup default stable
+          rustup target add aarch64-linux-android armv7-linux-androideabi
+          rustc --version && cargo --version
+          echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-unset}"
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            rust/vedit-core
+            rust/vedit-bridge
+
+      - name: Install cargo-ndk
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-ndk
+
+      - name: Rust fmt, clippy, unit tests
+        run: |
+          set -e
+          for d in rust/vedit-core rust/vedit-bridge; do
+            echo "=== $d"
+            (cd "$d" && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test)
+          done
+
       # Keystore didekode dari Secret ke file sementara di runner. Isinya tidak dicetak;
       # GitHub juga menyamarkan nilai secret di log. Tanpa secret (mis. PR dari fork), build
       # memakai debug key bawaan dan hal itu diberi peringatan di langkah verifikasi.
@@ -49,17 +78,17 @@ jobs:
           fi
 
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: ./gradlew testDebugUnitTest -Pvedit.requireNative=true --stacktrace
 
       - name: Lint
-        run: ./gradlew lintDebug --stacktrace
+        run: ./gradlew lintDebug -Pvedit.requireNative=true --stacktrace
 
       - name: Assemble debug APK
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug -Pvedit.requireNative=true --stacktrace
 
       - name: Name APK, verify, and write summary
         id: apk
@@ -73,6 +102,9 @@ jobs:
           FP=$("$BT/apksigner" verify --print-certs "dist/${NAME}" | grep -m1 "certificate SHA-256 digest" | sed 's/.*: //')
           BADGING=$("$BT/aapt2" dump badging "dist/${NAME}")
           echo "$BADGING" | grep -E "^package:|application-label:|application-icon" | head -8
+          LIBS=$(unzip -l "dist/${NAME}" | grep -o "lib/[a-z0-9-]*/libvedit_bridge.so" | sort | tr '\n' ' ')
+          echo "Native libs di APK: ${LIBS}"
+          echo "$LIBS" | grep -q "lib/arm64-v8a/libvedit_bridge.so" || { echo "::error::APK tidak memuat libvedit_bridge.so untuk arm64-v8a"; exit 1; }
           echo "$BADGING" | grep -q "application-icon" || { echo "::error::APK tidak memiliki ikon launcher"; exit 1; }
           if [ -n "$VEDIT_KEYSTORE_PATH" ]; then MODE="permanen (secrets)"; else MODE="debug key sementara (TIDAK kompatibel untuk update antar-build)"; fi
           {
@@ -85,6 +117,7 @@ jobs:
             echo "- Commit: \`${GITHUB_SHA::7}\`, build/versionCode: ${GITHUB_RUN_NUMBER}"
             echo "- Signing: ${MODE}"
             echo "- Sidik jari sertifikat SHA-256 (publik): \`${FP}\`"
+            echo "- Native: ${LIBS}"
             echo "- Verifikasi: apksigner OK, aapt2 badging OK, ikon launcher ada. Ini BUKAN uji instal di perangkat."
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -102,12 +135,12 @@ jobs:
           STAGE: ${{ steps.apk.outputs.stage }}
         run: |
           TAG="build-${GITHUB_RUN_NUMBER}"
-          NOTES="VEdit ${STAGE} v${VERSION}. Perubahan UI: HomeScreen dark studio dengan daftar/kartu proyek dan aksi proyek baru lebih jelas; MainActivity tema gelap/palet diselaraskan; PreviewPanel preview stage dan kontrol playback dirapikan; EditorScreen panel preview/kanvas, timeline, tools, dan media ditata ulang dengan layout adaptif. Perbaikan compile: import androidx.compose.foundation.background. Tidak mengubah model/schema proyek, timeline engine, autosave, media import, preview engine/controller, atau export controller. Version name 0.5.0 ke 0.5.1. Thumbnail timeline dan waveform belum tersedia. Validasi CI harus lulus; uji fisik build ini belum dikonfirmasi. APK debug untuk pengujian, bukan rilis produksi; tanpa signing secret memakai debug key sementara. Commit ${GITHUB_SHA::7}, build ${GITHUB_RUN_NUMBER}."
+          NOTES="VEdit ${STAGE} v${VERSION}. Milestone migrasi Hybrid Rust Engine: core editing (model proyek, operasi timeline, undo/redo, kanvas, perencana) kini di Rust dan menjadi jalur utama lewat bridge JNI; engine Kotlin lama tetap sebagai cadangan otomatis. Media3 dipertahankan untuk preview dan export. Lolos CI (tes Rust, tes Kotlin termasuk differential Rust vs Kotlin, lint, assembleDebug). BELUM diuji di perangkat fisik. APK debug untuk pengujian; debug key sementara. Commit ${GITHUB_SHA::7}, build ${GITHUB_RUN_NUMBER}."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "dist/${NAME}" --clobber
           else
             gh release create "$TAG" "dist/${NAME}" --target "$GITHUB_SHA" \
-              --title "VEdit ${STAGE} v${VERSION} — UI/UX refresh (build ${GITHUB_RUN_NUMBER})" --notes "$NOTES" --latest
+              --title "VEdit ${STAGE} v${VERSION} — Rust engine (build ${GITHUB_RUN_NUMBER})" --notes "$NOTES" --latest
           fi
           {
             echo "- Unduh APK langsung: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${NAME}"
